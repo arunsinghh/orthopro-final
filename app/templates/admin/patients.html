@@ -149,7 +149,7 @@
     {% set wa = (p.phone or '') | replace('+','') | replace(' ','') | replace('-','') %}
     {% if wa %}
     {% set wa_text = "Hello " ~ (p.name or '') ~ ", contacting you from OrthoPro Artificial Limbs Center. How can we assist you today?" %}
-    <a class="btn btn-xs" target="_blank" rel="noopener" href="https://web.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:600;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+    <a class="btn btn-xs" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:600;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
       💬 WhatsApp
     </a>
     {% endif %}

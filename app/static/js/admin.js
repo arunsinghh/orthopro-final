@@ -66,7 +66,7 @@
   document.querySelectorAll("input[data-toggle]:checked").forEach(applyToggle);
 })();
 
-// Mobile: open grouped sidebar sections so their links join the pill strip.
+// Mobile: open grouped sidebar sections when drawer is open
 (function () {
   if (!window.matchMedia || !window.matchMedia("(max-width: 860px)").matches) return;
   document.querySelectorAll("details.subnav").forEach(function (d) { d.open = true; });
@@ -119,4 +119,34 @@
 
   document.addEventListener("DOMContentLoaded", updateBulkBar);
   if (document.readyState !== "loading") updateBulkBar();
+})();
+
+// 6. Mobile Navigation Drawer Controller
+(function () {
+  var drawer = document.getElementById("admin-sidebar");
+  var backdrop = document.getElementById("drawer-backdrop");
+  var toggleBtn = document.getElementById("drawer-toggle");
+  var moreBtn = document.getElementById("bottom-more-btn");
+  var closeBtn = document.getElementById("drawer-close");
+
+  function openDrawer() {
+    if (drawer) drawer.classList.add("open");
+    if (backdrop) backdrop.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDrawer() {
+    if (drawer) drawer.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  if (toggleBtn) toggleBtn.addEventListener("click", openDrawer);
+  if (moreBtn) moreBtn.addEventListener("click", openDrawer);
+  if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+  if (backdrop) backdrop.addEventListener("click", closeDrawer);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeDrawer();
+  });
 })();

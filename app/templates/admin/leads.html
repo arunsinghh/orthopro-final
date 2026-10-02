@@ -262,8 +262,8 @@
           {% if wa %}
           {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center regarding " ~ (l.interest or 'your prosthetic / orthotic consultation') ~ ". How can we assist you today?" %}
           <div style="display:flex;gap:6px">
-            <a class="btn btn-xs" target="_blank" rel="noopener" href="https://web.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:700;flex:2;text-align:center;padding:7px 10px;border-radius:8px;box-shadow:0 2px 6px rgba(22,163,74,0.3)">
-              💬 Web WhatsApp ↗
+            <a class="btn btn-xs" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:700;flex:2;text-align:center;padding:7px 10px;border-radius:8px;box-shadow:0 2px 6px rgba(22,163,74,0.3)">
+              💬 WhatsApp ↗
             </a>
             <a class="btn btn-xs btn-o" href="tel:{{ l.pphone }}" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
               📞 Call
@@ -416,7 +416,7 @@
             {% set wa = (l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
             {% if wa %}
             {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center. How can we assist you today?" %}
-            <a class="btn btn-xs btn-o" target="_blank" rel="noopener" href="https://web.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="flex:1;text-align:center;color:#16a34a;border-color:#86efac;background:#f0fdf4;padding:7px 10px;border-radius:8px">💬 WhatsApp</a>
+            <a class="btn btn-xs btn-o" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="flex:1;text-align:center;color:#16a34a;border-color:#86efac;background:#f0fdf4;padding:7px 10px;border-radius:8px">💬 WhatsApp</a>
             {% endif %}
             {% endif %}
             {% if l.pid %}

@@ -1,16 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{% block title %}Admin{% endblock %} · OrthoPro Admin</title>
-<link rel="stylesheet" href="/static/css/admin.css?v=4">
+<link rel="stylesheet" href="/static/css/admin.css?v=6">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
 </head>
 <body>
+
+<!-- Mobile Header Bar (Sticky at top on mobile) -->
+<header class="mobile-header">
+  <button type="button" class="m-hamburger" id="drawer-toggle" aria-label="Open Navigation Menu">
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span class="bar"></span>
+  </button>
+  <a class="m-brand" href="/admin">🦿 OrthoPro <span style="color:#67e8f9">Admin</span></a>
+  <div class="m-header-actions">
+    {% if notif_count %}
+    <a href="/admin/followups" class="m-bell-btn" title="Follow-ups due">
+      🔔<span class="badge">{{ notif_count }}</span>
+    </a>
+    {% endif %}
+  </div>
+</header>
+
+<!-- Drawer Backdrop Overlay -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+
 <div class="layout">
-  <aside class="side">
-    <a class="brand" href="/admin">🦿 OrthoPro <span style="color:#67e8f9">Admin</span></a>
-    {% if admin_name %}<div style="padding:0 16px 10px;font-size:.82em;color:#94a3b8">
+  <aside class="side" id="admin-sidebar">
+    <div class="drawer-header">
+      <a class="brand" href="/admin">🦿 OrthoPro <span style="color:#67e8f9">Admin</span></a>
+      <button type="button" class="drawer-close" id="drawer-close" aria-label="Close Menu">&times;</button>
+    </div>
+    {% if admin_name %}<div class="drawer-user">
       👤 {{ admin_name }}</div>{% endif %}
     <nav>
       <a href="/admin" class="{{ 'on' if section=='dashboard' }}">🏠 Dashboard</a>
@@ -22,7 +47,7 @@
       {% if can('website') %}
       <div class="navgroup">WEBSITE</div>
       <details class="subnav" {{ 'open' if section in ('journeys','products','posts','reviews','media') }}>
-        <summary>🌐 Website</summary>
+        <summary>🌐 Website Content</summary>
         <a href="/admin/journeys" class="{{ 'on' if section=='journeys' }}">📖 Patient Journeys</a>
         <a href="/admin/products" class="{{ 'on' if section=='products' }}">🦿 Products &amp; Prices</a>
         <a href="/admin/posts" class="{{ 'on' if section=='posts' }}">✍️ Blog / SEO</a>
@@ -35,17 +60,45 @@
       {% if can('staff') %}<a href="/admin/staff" class="{{ 'on' if section=='staff' }}">🧑‍💼 Staff &amp; Permissions</a>{% endif %}
       {% if can('settings') %}<a href="/admin/settings" class="{{ 'on' if section=='settings' }}">⚙️ Settings</a>{% endif %}
 
-      <a href="/" target="_blank" style="margin-top:16px;border-top:1px solid #1e293b;padding-top:14px">🌐 View Website ↗</a>
-      <a href="/admin/logout">🚪 Logout</a>
+      <div class="drawer-footer">
+        <a href="/" target="_blank" class="m-ext-link">🌐 View Website ↗</a>
+        <a href="/admin/logout" class="m-logout-link">🚪 Logout</a>
+      </div>
     </nav>
   </aside>
-  <div class="main">
+  <main class="main">
     {% with msgs = get_flashed_messages(with_categories=true) %}
     {% if msgs %}{% for cat, msg in msgs %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
-  </div>
+  </main>
 </div>
-<script src="/static/js/admin.js" defer></script>
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="mobile-bottom-nav">
+  <a href="/admin" class="{{ 'on' if section=='dashboard' }}">
+    <span class="mb-icon">🏠</span>
+    <span class="mb-text">Home</span>
+  </a>
+  <a href="/admin/leads" class="{{ 'on' if section=='leads' }}">
+    <span class="mb-icon">📞</span>
+    <span class="mb-text">Leads</span>
+  </a>
+  <a href="/admin/patients" class="{{ 'on' if section=='patients' }}">
+    <span class="mb-icon">👥</span>
+    <span class="mb-text">Patients</span>
+  </a>
+  <a href="/admin/followups" class="{{ 'on' if section=='followups' }}" style="position:relative">
+    <span class="mb-icon">🔔</span>
+    <span class="mb-text">Alerts</span>
+    {% if notif_count %}<span class="mb-badge">{{ notif_count }}</span>{% endif %}
+  </a>
+  <button type="button" class="mb-btn-more" id="bottom-more-btn" aria-label="Open menu drawer">
+    <span class="mb-icon">☰</span>
+    <span class="mb-text">Menu</span>
+  </button>
+</nav>
+
+<script src="/static/js/admin.js?v=6" defer></script>
 </body>
 </html>
