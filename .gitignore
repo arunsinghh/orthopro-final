@@ -71,3 +71,35 @@ secrets.json
 .vscode/
 .idea/
 
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python databases / local data
+*.db
+*.sqlite
+*.sqlite3
+
+# User-uploaded files / local uploads
+uploads/
+
+# Secrets / credentials
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+*-service-account.json
+secrets.json
+
+# Local IDE
+.vscode/
+.idea/
+
