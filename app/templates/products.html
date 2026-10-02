@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › Products &amp; Prices</div>
+    <h1>Prosthetic &amp; Orthotic Products Price List 2026</h1>
+    <p>Transparent pricing on artificial legs, bionic hands, braces, insoles and diabetic footwear. Every price includes assessment, fabrication, fitting and training.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap">
+    <div class="chips">
+      <a class="chip {% if not cat %}on{% endif %}" href="/prices">All Products</a>
+      {% for cc in cats %}<a class="chip {% if cat == cc %}on{% endif %}" href="/prices?category={{ cc | urlencode }}">{{ cc }}</a>{% endfor %}
+    </div>
+    <div class="grid g3">
+      {% for p in products %}
+      <div class="prod">
+        {% set img = p.image or product_image(p.name) %}
+        {% if img %}<img src="{{ img }}" alt="{{ p.name }} – {{ p.category }}" loading="lazy">
+        {% else %}<div class="ph" style="background:linear-gradient(135deg,var(--cl),#dbeafe)"></div>{% endif %}
+        <div class="prod-body">
+          <span class="cat">{{ p.category }}</span>
+          <h3>{{ p.name }}</h3>
+          <div class="price">{{ p.price_min | inr }}{% if p.price_max > p.price_min %} – {{ p.price_max | inr }}{% endif %}</div>
+          <p><b>Brand:</b> {{ p.brand }}</p>
+          <p>{{ p.description }}</p>
+          <p style="margin-top:10px"><a href="https://wa.me/{{ settings.whatsapp }}?text=Hello%2C%20I%20want%20details%20about%20{{ p.name | urlencode }}" class="btn btn-outline btn-sm" rel="noopener">Enquire on WhatsApp</a></p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card" style="margin-top:40px">
+      <h3>💡 Why Prices Vary — And What's Always Included</h3>
+      <p>The final price of any prosthetic or orthotic device depends on socket material, component brand, suspension system and cosmetic finishing. At OrthoPro Artificial Limbs Center, <b>every quoted price already includes</b>: clinical assessment, casting/3D scan, fabrication, test fitting, alignment, gait training and 1-year free follow-up reviews. We never add surprise charges, and we help with ADIP scheme, CGHS and insurance paperwork.</p>
+    </div>
+  </div>
+</section>
+<section class="bg-alt center">
+  <div class="wrap">
+    <h2>Need Help Choosing the Right Product?</h2>
+    <p class="sub">Our clinicians will recommend the best option for your condition and budget — free of charge.</p>
+    <a href="/contact" class="btn btn-primary">Book Free Consultation</a>
+  </div>
+</section>
+{% endblock %}

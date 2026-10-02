@@ -1,0 +1,75 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Staff & Permissions{% endblock %}
+{% block content %}
+<div class="topbar"><h1>🧑‍💼 Staff &amp; Permissions</h1></div>
+
+<div class="card">
+  <h3 style="margin-top:0">➕ Create Staff Account</h3>
+  <form method="post" action="/admin/staff/save" class="fgrid">
+    {{ csrf_field() }}
+    <div><label>Username *</label><input name="username" required minlength="3"></div>
+    <div><label>Full Name</label><input name="full_name" placeholder="e.g. Ravi Kumar"></div>
+    <div><label>Temporary Password * (min 8 chars)</label><input name="password" required minlength="8"></div>
+    <div class="full"><label>Permissions</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px">
+        {% for key,label in cap_options %}
+        <label style="display:flex;gap:6px;align-items:center;font-weight:600">
+          <input type="checkbox" name="cap_{{ key }}" value="1" {{ 'checked' if key in ('leads','leads_edit') }}> {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="full"><button class="btn btn-p">Create Account</button></div>
+  </form>
+  <p class="muted" style="font-size:.85em">Staff log in on the same login page. Share the username + temporary password with them, and ask them to ask you if they need changes — only you can edit permissions.</p>
+</div>
+
+<h3 style="margin:18px 4px 8px">Accounts <span class="badge">{{ users|length }}</span></h3>
+{% for u in users %}
+<div class="card" style="padding:12px 16px;margin-bottom:10px">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:220px">
+      <b>{{ u.full_name or u.username }}</b>
+      <span class="muted">@{{ u.username }}</span>
+      {% if u.role == 'super_admin' %}<span class="tag tag-ok">Admin — full access</span>
+      {% elif u.is_active %}<span class="tag tag-new">staff</span>
+      {% else %}<span class="tag tag-due">disabled</span>{% endif %}
+      <div class="muted" style="font-size:.85em">
+        🔑 {% if u.role == 'super_admin' %}everything{% else %}{{ u.caps | replace('_', ' ') | replace(',', ' · ') or 'no permissions' }}{% endif %}
+        &nbsp;·&nbsp; 📞 {{ u.lead_count }} assigned lead{{ 's' if u.lead_count != 1 }}
+      </div>
+    </div>
+    {% if u.role != 'super_admin' %}
+    <form method="post" action="/admin/staff/{{ u.id }}/toggle" style="display:inline">
+      {{ csrf_field() }}
+      <button class="btn btn-xs {{ 'btn-o' if u.is_active else 'btn-p' }}"
+        data-confirm="{{ 'Disable this account? They will not be able to log in.' if u.is_active else 'Re-enable this account?' }}">
+        {{ '⏸ Disable' if u.is_active else '▶ Enable' }}</button>
+    </form>
+    {% endif %}
+    {% if u.role != 'super_admin' %}
+    <details style="display:inline-block">
+      <summary class="btn btn-xs btn-o" style="cursor:pointer">✏️ Edit</summary>
+      <form method="post" action="/admin/staff/save" class="fgrid" style="margin-top:8px;min-width:280px">
+        {{ csrf_field() }}
+        <input type="hidden" name="uid" value="{{ u.id }}">
+        <div><label>Username</label><input name="username" value="{{ u.username }}" required></div>
+        <div><label>Full Name</label><input name="full_name" value="{{ u.full_name }}"></div>
+        <div class="full"><label>Permissions</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+            {% for key,label in cap_options %}
+            <label style="display:flex;gap:6px;align-items:center;font-weight:600">
+              <input type="checkbox" name="cap_{{ key }}" value="1" {{ 'checked' if key in u.caps.split(',') }}> {{ label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="full"><label>New password (leave blank to keep current)</label><input name="password" minlength="8"></div>
+        <div class="full"><button class="btn btn-xs btn-p">Save Changes</button></div>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

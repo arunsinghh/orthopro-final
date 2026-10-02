@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › FAQ</div>
+    <h1>Frequently Asked Questions</h1>
+    <p>Honest answers about prosthetic &amp; orthotic prices, fitting timelines, insurance and care.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap" style="max-width:860px">
+    {% for ques, ans in faqs %}
+    <details class="faq-i" {% if loop.index <= 2 %}open{% endif %}>
+      <summary>{{ ques }}</summary>
+      <p>{{ ans }}</p>
+    </details>
+    {% endfor %}
+    <div class="card center" style="margin-top:30px;background:var(--cl);border:0">
+      <h3>Still Have a Question?</h3>
+      <p style="margin:8px 0 14px">Our clinicians answer every call personally.</p>
+      <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-primary btn-sm">📞 {{ settings.phone }}</a>
+      <a href="https://wa.me/{{ settings.whatsapp }}" class="btn btn-outline btn-sm" rel="noopener">WhatsApp</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

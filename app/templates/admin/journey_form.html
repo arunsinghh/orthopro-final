@@ -1,0 +1,50 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Edit' if j else 'Add' }} Journey{% endblock %}
+{% block content %}
+<div class="topbar"><h1>{{ 'Edit Journey' if j else 'Add Patient Journey' }}</h1>
+<a href="/admin/journeys" class="btn btn-o">← Back</a></div>
+<div class="card">
+<form method="post" class="fgrid">
+  {{ csrf_field() }}
+  <div class="full"><label>Story Title *</label><input name="title" required value="{{ j.title if j else '' }}" placeholder="e.g. From Wheelchair to Walking: Ramesh's Journey"></div>
+  <div><label>Patient Name</label><input name="patient_name" value="{{ j.patient_name if j else '' }}"></div>
+  <div><label>Area / City</label><input name="area" value="{{ j.area if j else '' }}"></div>
+  <div><label>Service</label>
+    <select name="service"><option value="">—</option>
+      {% for s in services %}<option {{ 'selected' if j and j.service==s }}>{{ s }}</option>{% endfor %}
+    </select></div>
+  <div><label>Featured on Homepage</label>
+    <select name="featured"><option value="1" {{ 'selected' if j and j.featured }}>Yes — show on homepage</option><option value="0" {{ 'selected' if j and not j.featured }}>No</option></select></div>
+  <div class="full"><label>Full Story</label><textarea name="story" rows="10" placeholder="Write the story in paragraphs — condition, treatment at OrthoPro, recovery, and the patient's own words.">{{ j.story if j else '' }}</textarea></div>
+  <div class="full" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:10px;padding:12px">
+    <label style="display:flex;gap:10px;align-items:flex-start;font-weight:600">
+      <input type="checkbox" name="consent_public" value="1" required
+        {{ 'checked' if j and j.consent_public }} style="margin-top:4px">
+      <span>The patient has explicitly given consent for their story, name and photos to be
+      published on the public website. <span class="muted" style="font-weight:400">(Required — a story cannot be published without this.)</span></span>
+    </label>
+  </div>
+
+  <div><label>Before Photo</label>
+    <select data-fill="#bi">
+      <option value="">— pick from Media Library —</option>
+      {% for md in media if md.kind=='image' %}<option value="/uploads/{{ md.filename }}">{{ md.orig_name }}</option>{% endfor %}
+    </select>
+    <p class="muted">Or paste any image URL:</p>
+    <input id="bi" name="before_image" value="{{ j.before_image if j else '' }}" placeholder="/uploads/xyz.jpg or https://…">
+  </div>
+  <div><label>After Photo</label>
+    <select data-fill="#ai">
+      <option value="">— pick from Media Library —</option>
+      {% for md in media if md.kind=='image' %}<option value="/uploads/{{ md.filename }}">{{ md.orig_name }}</option>{% endfor %}
+    </select>
+    <p class="muted">Or paste any image URL:</p>
+    <input id="ai" name="after_image" value="{{ j.after_image if j else '' }}" placeholder="/uploads/xyz.jpg or https://…">
+  </div>
+  <div class="full"><label>Video (optional) — YouTube link or uploaded video URL</label>
+    <input name="video" value="{{ j.video if j else '' }}" placeholder="https://youtube.com/watch?v=… or /uploads/video.mp4">
+    <p class="muted">Tip: upload videos in the Media Library, or paste a YouTube link.</p></div>
+  <div class="full" style="margin-top:18px"><button class="btn btn-p">{{ 'Save Journey' if j else 'Publish Journey' }}</button></div>
+</form>
+</div>
+{% endblock %}

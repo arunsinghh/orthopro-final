@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/" style="color:#bfeef7">Home</a> › Services</div>
+    <h1>Our Prosthetic &amp; Orthotic Services</h1>
+    <p>Custom-made artificial limbs, braces and mobility solutions — designed, fitted and
+       supported by our own clinicians in Delhi. Transparent pricing, free first consultation.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="svc-grid">
+      {% for s in services %}
+      <a class="svc-card" href="/services/{{ s.slug }}">
+        <div class="ph">
+          <img src="/static/img/services/{{ s.slug }}.jpg" alt="{{ s.name }} at OrthoPro Artificial Limbs Center"
+               loading="lazy" width="1200" height="800">
+          {% if s.category %}<span class="cat">{{ s.category }}</span>{% endif %}
+        </div>
+        <div class="bd">
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.short }}</p>
+          <span class="go">View Details →</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="bg-alt center">
+  <div class="wrap">
+    <h2>Not Sure Which Service You Need?</h2>
+    <p class="sub">Call us and describe your condition — our clinicians will guide you to the right solution for free.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-primary">📞 {{ settings.phone }}</a>
+      {% set wa = (settings.whatsapp or settings.phone) | replace('+','') | replace(' ','') %}
+      <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener" class="btn btn-outline">💬 WhatsApp Us</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

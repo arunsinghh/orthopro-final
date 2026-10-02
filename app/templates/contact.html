@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › Contact</div>
+    <h1>Book Your Free Consultation</h1>
+    <p>Fill the form and our team will call you back within working hours — or call / WhatsApp us right now.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap split" style="align-items:start">
+    <div class="card">
+      <h3>Request an Appointment</h3>
+      <form class="labeled" method="post">
+  {{ csrf_field() }}
+        <div class="form-grid">
+          <div><label for="cname">Full Name *</label><input id="cname" name="name" required></div>
+          <div><label for="cphone">Phone Number *</label><input id="cphone" name="phone" required placeholder="+91"></div>
+          <div><label for="cemail">Email (optional)</label><input id="cemail" name="email" type="email"></div>
+          <div><label for="carea">Your Area / City</label><input id="carea" name="area" placeholder="e.g. Malviya Nagar, Delhi"></div>
+          <div><label for="csvc">Service Needed</label>
+            <select id="csvc" name="service">
+              <option value="">— Select —</option>
+              {% for s in services %}<option>{{ s.name }}</option>{% endfor %}
+            </select></div>
+          <div><label for="cdate">Preferred Date</label><input id="cdate" name="preferred_date" type="date"></div>
+          <div class="full"><label for="cmsg">Tell Us About Your Condition</label>
+            <textarea id="cmsg" name="message" rows="4" placeholder="e.g. Below-knee amputation 3 months ago, looking for a prosthetic leg…"></textarea></div>
+        </div>
+        <p style="margin-top:18px"><button class="btn btn-primary">Submit Request</button></p>
+      </form>
+    </div>
+    <div>
+      <div class="card">
+        <h3>📞 Contact Details</h3>
+        <p><b>Phone:</b> <a href="tel:{{ settings.phone.replace(' ','') }}">{{ settings.phone }}</a></p>
+        <p><b>WhatsApp:</b> <a href="https://wa.me/{{ settings.whatsapp }}" rel="noopener">Chat with us</a></p>
+        <p><b>Email:</b> {{ settings.email }}</p>
+        <p><b>Address:</b> {{ settings.address }}</p>
+        <p><b>Timings:</b> {{ settings.hours }}</p>
+        <p style="margin-top:10px"><a href="{{ settings.map_url }}" class="btn btn-outline btn-sm" rel="noopener">📍 Get Directions</a></p>
+      </div>
+      <div class="card" style="margin-top:18px;background:var(--cl);border:0">
+        <h3>🚑 Urgent / Home Visit?</h3>
+        <p>For bedridden patients or urgent post-surgery needs, call us directly — home visits are scheduled within 24–48 hours across Delhi NCR.</p>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3>⭐ Read Our Reviews</h3>
+        <p>See what 200+ patients say about us on Google.</p>
+        <p style="margin-top:8px"><a href="{{ settings.gmb_url }}" class="btn btn-outline btn-sm" rel="noopener">Google Reviews</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

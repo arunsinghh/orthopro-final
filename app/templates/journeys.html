@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › Patient Journeys</div>
+    <h1>Patient Success Stories</h1>
+    <p>Every device we fit has a human story behind it. Here are real journeys of patients who regained mobility, confidence and independence at OrthoPro Artificial Limbs Center.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap">
+    <div class="grid g3">
+      {% for j in journeys %}
+      <div class="j-card">
+        <div class="ba">
+          <img src="{{ j.before_image }}" alt="Before treatment – {{ j.patient_name }}" loading="lazy">
+          <img src="{{ j.after_image }}" alt="After treatment – {{ j.patient_name }}" loading="lazy">
+        </div>
+        <div class="j-body">
+          <span class="tag">{{ j.service.split('(')[0] }}</span>
+          <h3><a href="/journey/{{ j.id }}">{{ j.title }}</a></h3>
+          <p>{{ j.story[:160] }}…</p>
+          <p><a href="/journey/{{ j.id }}">Read full story →</a></p>
+        </div>
+      </div>
+      {% else %}
+      <p>Stories coming soon.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="bg-alt center">
+  <div class="wrap">
+    <h2>Your Story Could Be Next</h2>
+    <p class="sub">Start your recovery journey with a free consultation today.</p>
+    <a href="/contact" class="btn btn-primary">Book Free Consultation</a>
+  </div>
+</section>
+{% endblock %}

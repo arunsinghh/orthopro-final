@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › <a href="/blog">Guides</a></div>
+    <h1>{{ p.title }}</h1>
+    <p>By OrthoPro Artificial Limbs Center Clinical Team · {{ p.created_at[:10] }}</p>
+  </div>
+</div>
+<section>
+  <div class="wrap prose">
+    {{ p.body | md | safe }}
+    <div class="card" style="margin-top:30px;background:var(--cl);border:0">
+      <h3>Need Personal Advice?</h3>
+      <p style="margin:8px 0 14px">Every case is different. Get a free, specific answer for your situation.</p>
+      <a href="/contact" class="btn btn-primary btn-sm">Book Free Consultation</a>
+      <a href="/prices" class="btn btn-outline btn-sm">View Price List</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

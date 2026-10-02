@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › About Us</div>
+    <h1>About OrthoPro Artificial Limbs Center</h1>
+    <p>A certified prosthetics &amp; orthotics rehabilitation center built on one belief: every person deserves to move with dignity.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>Our Story</h2>
+      <p>OrthoPro Artificial Limbs Center was founded by clinicians who saw too many amputee families overpaying for poorly fitted devices — or giving up on mobility entirely. We set out to build a center where international technology meets honest, personalized care at prices Indian families can afford.</p>
+      <p>Today our in-house workshop, 3D scanning suite and gait-training floor serve patients from across Delhi NCR and neighbouring states, from first-time fittings to complex revisions referred from other centers.</p>
+      <ul class="check">
+        <li>Certified Prosthetist &amp; Orthotist team</li>
+        <li>2,000+ successful fittings across all amputation levels</li>
+        <li>In-house fabrication workshop — no outsourcing</li>
+        <li>ADIP scheme, CGHS &amp; insurance paperwork support</li>
+        <li>Home visits for patients who cannot travel</li>
+      </ul>
+    </div>
+    <img src="/static/img/clinic.jpg" alt="OrthoPro Artificial Limbs Center clinic facility in Delhi" loading="lazy">
+  </div>
+</section>
+<section class="bg-white">
+  <div class="wrap">
+    <h2 class="center">Our Facility</h2>
+    <p class="sub">Everything under one roof: consultation rooms, casting bay, 3D scanner, fabrication workshop, alignment station and rehabilitation floor.</p>
+    <div class="grid g4">
+      <div class="card center"><div class="ic">🖥️</div><h3>3D Scanning Suite</h3><p>Contact-free digital casting for perfect socket geometry.</p></div>
+      <div class="card center"><div class="ic">🏭</div><h3>Fabrication Workshop</h3><p>Lamination, thermoforming and CNC finishing in-house.</p></div>
+      <div class="card center"><div class="ic">🚶</div><h3>Gait Training Floor</h3><p>Parallel bars, stairs, ramps &amp; uneven-terrain practice.</p></div>
+      <div class="card center"><div class="ic">🧼</div><h3>Hygiene First</h3><p>International-standard sterilization of all contact equipment.</p></div>
+    </div>
+  </div>
+</section>
+<section class="bg-alt">
+  <div class="wrap">
+    <h2 class="center">Why Families Choose Us</h2>
+    <div class="grid g3">
+      <div class="card"><div class="ic">🎯</div><h3>Fit Over Sale</h3><p>We recommend the cheapest device that truly solves your problem — and say no when a product isn't right for you.</p></div>
+      <div class="card"><div class="ic">💰</div><h3>Transparent Pricing</h3><p>Written quotations, all-inclusive prices, and help with government schemes and insurance.</p></div>
+      <div class="card"><div class="ic">🤝</div><h3>Lifetime Relationship</h3><p>Sockets change as bodies change. We're here for refits, repairs and upgrades for life.</p></div>
+    </div>
+  </div>
+</section>
+<section class="center">
+  <div class="wrap">
+    <h2>Visit Us</h2>
+    <p class="sub">{{ settings.address }}<br>{{ settings.hours }}</p>
+    <a href="{{ settings.map_url }}" class="btn btn-primary" rel="noopener">Get Directions</a>
+  </div>
+</section>
+{% endblock %}

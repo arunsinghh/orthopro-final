@@ -1,0 +1,737 @@
+{
+ "services": [
+  {
+   "id": 1,
+   "slug": "lower-limb-prosthetics",
+   "name": "Lower Limb Prosthetics (Artificial Legs)",
+   "short": "Complete artificial leg solutions \u2014 below knee, above knee, through knee and partial foot prostheses.",
+   "category": "Lower Limb Prosthetics",
+   "icon": "\ud83e\uddbf",
+   "meta_desc": "Artificial leg fitting in Delhi. Below-knee & above-knee prosthetics from \u20b925,000 with 3D scanning, gait training & free follow-ups.",
+   "keywords": "artificial leg delhi, below knee prosthesis, above knee artificial limb, prosthetic leg price",
+   "description": "Losing a leg \u2014 whether to an accident, diabetes, vascular disease or cancer \u2014 changes life overnight. Our lower-limb prosthetic programme is built to give you back not just mobility, but your confidence and independence.\n\nWe fit artificial legs for every level of amputation: partial foot (Chopart/Lisfranc), below-knee (transtibial), through-knee, above-knee (transfemoral) and hip disarticulation. Every prosthetic leg begins with a detailed clinical assessment of your stump health, muscle strength, balance, body weight, daily activity demands and lifestyle goals.\n\nWe work with internationally proven component systems from Ottobock (Germany), Ossur (Iceland), Endolite/Blatchford (UK) and trusted Indian manufacturers \u2014 so you can choose a solution at every budget, from a durable basic leg starting at \u20b925,000 to microprocessor-controlled knees used by the world's most active amputees.\n\nEvery fitting includes a custom-made socket (the most important part of any prosthesis), test-fitting trials, dynamic alignment on our gait-analysis floor, gait training with our physiotherapist, and free alignment reviews for one full year.",
+   "who_for": "\u2022 Below-knee (transtibial) amputation \u2014 most common, excellent walking outcomes\n\u2022 Above-knee (transfemoral) amputation \u2014 mechanical, hydraulic or microprocessor knees\n\u2022 Through-knee (knee disarticulation) amputation\n\u2022 Partial foot amputation \u2014 toe fillers & Chopart/Lisfranc prostheses\n\u2022 Hip disarticulation & hemipelvectomy cases\n\u2022 Bilateral (both legs) amputees & elderly patients needing extra stability\n\u2022 Diabetic amputees \u2014 special protective socket designs",
+   "process": "1. Consultation & stump assessment (Day 1)\n2. Casting / 3D laser scanning of the stump (Day 1\u20132)\n3. Socket fabrication & test fitting in clear check socket (Day 3\u20135)\n4. Component selection \u2014 knee, foot, liner & suspension system\n5. Final assembly & dynamic alignment (Day 5\u20138)\n6. Gait training with physiotherapist \u2014 walking, stairs, ramps (Day 6\u201310)\n7. Delivery, home-care education & care booklet\n8. Free reviews at 2 weeks, 6 weeks, 3 months & 12 months",
+   "sort": 1
+  },
+  {
+   "id": 2,
+   "slug": "upper-limb-prosthetics",
+   "name": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "short": "Functional & cosmetic artificial hands, bionic myoelectric hands, wrist and elbow units.",
+   "category": "Upper Limb Prosthetics",
+   "icon": "\ud83e\uddbe",
+   "meta_desc": "Bionic myoelectric hands & artificial arms in Delhi. Entry-level from \u20b92 lakh, multi-grip bionic hands, body-powered hooks & cosmetic gloves.",
+   "keywords": "bionic hand india, myoelectric hand price, artificial hand delhi, below elbow prosthesis",
+   "description": "Your hands define how you interact with the world \u2014 holding a cup of chai, riding a scooter, typing at work, holding your child's hand. Our upper-limb prosthetic programme restores that connection.\n\nWe provide the full spectrum of arm and hand replacement: body-powered hooks and hands for heavy daily work, myoelectric (bionic) hands controlled by your own muscle signals, hybrid systems combining myoelectric hands with mechanical elbows, and realistic passive cosmetic hands made from custom-coloured silicone that closely matches your skin tone.\n\nFor below-elbow (transradial) and above-elbow (transhumeral) amputees we fabricate lightweight laminated or thermoplastic sockets, fit quick-disconnect wrists and offer training on every grip pattern. Children get special pediatric hands that grow with them.\n\nOur team is trained in myoelectric electrode placement, EMG signal testing and bionic-hand training \u2014 and we trial the device with you before final delivery, so you never receive a hand you haven't already controlled confidently.",
+   "who_for": "\u2022 Below-elbow (transradial) amputees \u2014 cosmetic, body-powered & bionic options\n\u2022 Above-elbow (transhumeral) amputees \u2014 mechanical or myoelectric elbow + hand\n\u2022 Partial-hand & finger amputations \u2014 cosmetic silicone fingers & grip aids\n\u2022 Wrist disarticulation cases\n\u2022 Children with congenital limb difference (pediatric hands from age 2)\n\u2022 Working professionals needing fast, precise multi-grip control\n\u2022 Users upgrading from an old or uncomfortable device",
+   "process": "1. Consultation, EMG/muscle-signal test & lifestyle assessment\n2. Casting or 3D scan of the residual limb\n3. Socket fabrication & component shortlisting (hand, wrist, elbow)\n4. Trial fitting \u2014 practising grip patterns in clinic\n5. Myoelectric training sessions (for bionic hands) \u2014 typically 3\u20135 visits\n6. Final delivery with charger, spare liners & user manual\n7. Follow-up training reviews and socket adjustments for 1 year",
+   "sort": 2
+  },
+  {
+   "id": 3,
+   "slug": "orthotics-braces",
+   "name": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "short": "Custom orthotic devices that support, align and correct \u2014 for nerve injuries, polio, stroke, scoliosis and post-surgical recovery.",
+   "category": "Orthotics & Braces",
+   "icon": "\ud83e\ude7c",
+   "meta_desc": "Custom orthotic braces in Delhi \u2014 AFO foot-drop splints, KAFO calipers, TLSO spinal braces, cervical collars & posture correctors, fitted by certified orthotists.",
+   "keywords": "AFO splint delhi, foot drop brace, KAFO calipers, spinal brace TLSO, orthotic devices india",
+   "description": "An orthosis is an externally worn device that supports, aligns, protects or corrects a part of your body while it heals or lives with a permanent condition. The right brace can mean the difference between dependency and independence.\n\nAt OrthoPro India we custom-fabricate orthoses for every body region: ankle-foot orthoses (AFO) for foot drop caused by stroke, polio or nerve injury; knee-ankle-foot orthoses (KAFO) with lockable joints for polio survivors and spinal-cord injury patients; hip-knee-ankle-foot orthoses for children with cerebral palsy; spinal orthoses (TLSO, Milwaukee, LS belts) for scoliosis, fractures and post-surgical support; cervical collars; and the full range of upper-limb splints for fractures, tendon injuries and nerve palsies.\n\nEvery device is moulded to your body \u2014 measured, casted or 3D scanned, fabricated in our own workshop, fitted with padding and straps, and adjusted until it feels right. We use lightweight polypropylene, carbon-composite materials and breathable padding so devices are comfortable in Indian summers.",
+   "who_for": "\u2022 Stroke patients with foot drop or weak grip\n\u2022 Polio survivors needing calipers & long-leg braces\n\u2022 Children with cerebral palsy (CP) or spina bifida\n\u2022 Scoliosis & kyphosis (spinal curvature) \u2014 children & adults\n\u2022 Post-surgical spine & fracture patients\n\u2022 Peripheral nerve injuries (radial/ulnar/median nerve palsy)\n\u2022 Ligament injuries of the knee & ankle\n\u2022 Elderly patients needing posture & balance support",
+   "process": "1. Clinical evaluation & prescription review\n2. Biomechanical assessment \u2014 gait, range of motion, muscle power\n3. Casting / 3D scanning / direct measurement\n4. Fabrication in our workshop (2\u20135 days)\n5. Fitting, padding, strap adjustments & pressure checks\n6. Walking/splint training and home-use instructions\n7. Review visits until comfort and function goals are met",
+   "sort": 3
+  },
+  {
+   "id": 4,
+   "slug": "diabetic-foot-care",
+   "name": "Diabetic Foot Care & Diabetic Footwear",
+   "short": "Protective insoles, custom diabetic shoes and ulcer-prevention care for diabetic feet.",
+   "category": "Foot Care & Insoles",
+   "icon": "\ud83e\uddb6",
+   "meta_desc": "Diabetic foot care in Delhi \u2014 custom moulded diabetic footwear, ulcer-prevention insoles & foot-risk assessment to protect diabetic feet from amputation.",
+   "keywords": "diabetic footwear delhi, diabetic foot ulcer prevention, custom insoles, mcr chappal",
+   "description": "Diabetes quietly damages the nerves and blood vessels of the feet. A small blister can become an ulcer; an untreated ulcer can lead to amputation. In India, diabetic foot problems are the #1 cause of non-traumatic amputations \u2014 and almost all of them are preventable with the right footwear and care.\n\nOur diabetic foot programme begins with a complete foot-risk assessment: sensation testing with monofilament and tuning fork, pulse checks, skin and nail inspection, and foot-pressure analysis. Based on your risk level we prescribe the right protection.\n\nFor low-risk patients, custom-moulded insoles distribute pressure evenly. For moderate/high-risk patients or those with existing ulcers, we fabricate total-contact insoles from MCR (microcellular rubber) and mould custom diabetic shoes that offload pressure from wound sites \u2014 allowing healing while you keep walking.\n\nWe also educate every patient and family on daily foot inspection, correct nail care, sock selection and warning signs \u2014 because prevention is a habit, not a one-time product.",
+   "who_for": "\u2022 Anyone with diabetes for more than 5 years\n\u2022 Patients with numbness, tingling or burning in the feet\n\u2022 Patients who have had a foot ulcer before\n\u2022 People with visible foot deformities (hammer toes, bunions)\n\u2022 Post-ulcer healing patients needing pressure offloading\n\u2022 Elderly diabetics living alone who need guided foot care",
+   "process": "1. Foot-risk screening & vascular check (15 minutes)\n2. Pressure & gait assessment\n3. Recommendation: insole vs. MCR footwear vs. total-contact device\n4. 3D scan / foam-box impression of the foot\n5. Custom moulding & fabrication (3\u20137 days)\n6. Fit-check with ulcer-site pressure verification\n7. Review after 2 weeks, then every 6 months",
+   "sort": 4
+  },
+  {
+   "id": 5,
+   "slug": "pediatric-care",
+   "name": "Pediatric Prosthetics & Orthotics for Children",
+   "short": "Gentle, play-based fitting of artificial limbs, braces and corrective devices for infants and children.",
+   "category": "Orthotics & Braces",
+   "icon": "\ud83d\udc76",
+   "meta_desc": "Pediatric prosthetics & orthotics in Delhi \u2014 artificial limbs for children, CP braces, club-foot orthotics & scoliosis correction, delivered with child-friendly care.",
+   "keywords": "pediatric prosthetics india, children artificial limb, cerebral palsy braces delhi, club foot orthosis",
+   "description": "Children are not small adults. A child's body grows fast, their attention span is short, and their rehabilitation must feel like play, not treatment. Our pediatric programme is designed around exactly that.\n\nWe fit artificial limbs for children with congenital limb deficiency (born without part of a limb) or amputation \u2014 including baby prostheses fitted as early as 8\u201312 months so children learn to walk symmetrically from the start. Devices are made lighter, more durable and more colourful, and we resize sockets on schedule as your child grows.\n\nOn the orthotic side we treat cerebral palsy (AFOs, ground-reaction AFOs, SWASH hip braces), club foot correction shoes, spina bifida braces, torticollis helmets positioning, scoliosis bracing and post-surgical supports. Every child's plan is coordinated with their pediatrician, orthopaedic surgeon and physiotherapist.\n\nParents are trained hands-on: how to put the device on, how to check the skin, when to come back, and how to encourage milestones \u2014 standing, walking, running, playing.",
+   "who_for": "\u2022 Children born with limb deficiency or missing digits\n\u2022 Children after amputation (injury, infection, cancer)\n\u2022 Cerebral palsy \u2014 all GMFCS levels\n\u2022 Club foot & vertical talus correction\n\u2022 Spina bifida & myelomeningocele\n\u2022 Scoliosis & postural deformities in growing children\n\u2022 Developmental delay needing standing support",
+   "process": "1. Child-friendly consultation with parents & therapists\n2. Play-based assessment & measurement (no forced casting where possible)\n3. Fast-tracked fabrication \u2014 children need devices quickly to hit milestones\n4. Short, positive fitting visits with toys and encouragement\n5. Parent training: donning, skin checks, wear schedule\n6. Growth reviews every 4\u20136 months; socket resizing as needed",
+   "sort": 5
+  },
+  {
+   "id": 6,
+   "slug": "rehabilitation-gait-training",
+   "name": "Rehabilitation & Gait Training",
+   "short": "Physiotherapy-guided walking training, balance work and strength programmes so your device becomes part of you.",
+   "category": "Rehabilitation",
+   "icon": "\ud83c\udfc3",
+   "meta_desc": "Prosthetic rehabilitation & gait training in Delhi \u2014 walking practice on parallel bars, stairs & ramps, balance training and strength programmes after limb fitting.",
+   "keywords": "prosthetic rehabilitation delhi, gait training amputee, physiotherapy artificial leg",
+   "description": "A prosthetic leg or a brace only delivers results when your body learns to use it. That learning happens in rehabilitation \u2014 and it's the part of care most clinics skip.\n\nOur in-clinic rehabilitation area has parallel bars, walking tracks, stairs, ramps and uneven-terrain practice surfaces. Under physiotherapist supervision, you progress through a structured programme: stump care and stretching \u2192 standing balance \u2192 weight shifting \u2192 step-through walking \u2192 stair and ramp negotiation \u2192 outdoor skills like slopes and uneven ground.\n\nWe track your progress objectively: walking distance, speed, symmetry and confidence score at every visit. Upper-limb users get task-specific training \u2014 lifting, gripping, eating, dressing and work-specific movements.\n\nFor patients recovering from stroke or injury with orthoses, we focus on gait re-education, fall prevention and progressive strength building. Home exercise plans are provided in print and video so progress continues between visits.",
+   "who_for": "\u2022 New prosthetic users learning to walk\n\u2022 Long-time users who never received formal training\n\u2022 Orthosis users (stroke, polio, CP) improving gait\n\u2022 Amputees returning to sports, work or driving\n\u2022 Patients with balance problems or fear of falling\n\u2022 Anyone changing device type (e.g. mechanical \u2192 microprocessor knee)",
+   "process": "1. Baseline mobility assessment & goal setting\n2. Individual training plan (usually 6\u201312 supervised sessions)\n3. Parallel-bar & track walking, stairs, ramps, outdoor surfaces\n4. Strength, balance & fall-recovery training\n5. Re-assessment with measurable progress report\n6. Home exercise programme & video guides\n7. Optional home-visit training for immobile patients",
+   "sort": 6
+  },
+  {
+   "id": 7,
+   "slug": "repair-maintenance",
+   "name": "Repair, Maintenance & Upgrades",
+   "short": "Socket refits, component replacement, liner renewal and upgrades for any brand of prosthesis or orthosis.",
+   "category": "Rehabilitation",
+   "icon": "\ud83d\udd27",
+   "meta_desc": "Prosthetic repair & maintenance in Delhi \u2014 socket refitting, knee/foot replacement, liner change and alignment correction for all brands of artificial limbs.",
+   "keywords": "prosthetic repair delhi, artificial limb maintenance, socket refitting",
+   "description": "Weight loss, weight gain, muscle change \u2014 your body changes, and your socket must change with it. An uncomfortable, loose or squeaking device is not something to live with; it's something to fix.\n\nOur workshop handles repairs and maintenance for any brand: Ottobock, Ossur, Endolite, Blatchford, Indian-made and unbranded devices. Common services include socket refitting and replacement, knee and foot unit replacement, liner and sleeve renewal, alignment correction, cosmetic foam renewal, strap and buckle replacement, and myoelectric hand diagnostics.\n\nWe also perform upgrade consultations \u2014 if you've been walking for years on a basic mechanical knee, we'll trial a hydraulic or microprocessor knee so you can feel the difference yourself before deciding.\n\nMost minor repairs are completed the same day. For major work we provide a loaner device wherever possible so you're never left without mobility.",
+   "who_for": "\u2022 Users with loose or uncomfortable sockets\n\u2022 Broken or worn knee/foot components\n\u2022 Torn liners, straps or cosmetic covers\n\u2022 Myoelectric hands with charging or signal problems\n\u2022 Anyone wanting to upgrade to better technology\n\u2022 Polio caliper users needing joint refurbishment",
+   "process": "1. Free inspection & written estimate\n2. Repair approval \u2014 no hidden charges\n3. Same-day minor repairs; 2\u20135 days for major work\n4. Alignment re-check after every repair\n5. Loaner device offered for long repairs",
+   "sort": 7
+  },
+  {
+   "id": 8,
+   "slug": "home-visit-service",
+   "name": "Home Visit Services Across Delhi NCR",
+   "short": "Assessment, casting, delivery and follow-up at your home for patients who cannot travel.",
+   "category": "Rehabilitation",
+   "icon": "\ud83c\udfe0",
+   "meta_desc": "Home visits for prosthetic & orthotic care in Delhi NCR \u2014 assessment, casting, fitting and follow-up at home for elderly and immobile patients.",
+   "keywords": "home visit prosthetic delhi, artificial limb home service, orthotic home visit ncr",
+   "description": "Some patients simply cannot come to a clinic \u2014 elderly bedridden patients, recent stroke cases, ICU-discharged patients, or amputees recovering from surgery. For them, the clinic comes to their home.\n\nOur clinical team travels across Delhi NCR with portable equipment for home assessments, stump casting, measurement for braces and insoles, device delivery and adjustment, and follow-up reviews. Wheelchair and mobility-aid recommendations are also provided at home with family training.\n\nHome visits follow the same clinical protocol as in-clinic care: documentation, photographs (with consent), measurement records and a written plan shared with the family. Complex fabrication still happens in our workshop, but every visit that can happen at your home will.\n\nCall us to check availability in your area \u2014 visits are scheduled within 24\u201348 hours in most of Delhi NCR.",
+   "who_for": "\u2022 Elderly & bedridden patients\n\u2022 Post-surgery patients who cannot travel\n\u2022 Stroke & neuro patients in early recovery\n\u2022 ICU-discharged patients needing positioning devices\n\u2022 Families who need device training at home",
+   "process": "1. Phone/WhatsApp consultation & requirement capture\n2. Home visit slot confirmed within 24\u201348 hours\n3. Assessment, casting or fitting at home\n4. Fabrication at our workshop\n5. Delivery, adjustment & family training at home\n6. Scheduled home follow-ups",
+   "sort": 8
+  }
+ ],
+ "products": [
+  {
+   "id": 1,
+   "name": "Below-Knee (Transtibial) Basic Prosthetic Leg",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Indian-made / PMSSY-grade",
+   "description": "Durable polypropylene socket, single-axis ankle and SACH foot. Ideal first leg for daily household walking. Includes socket, alignment & gait training.",
+   "price_min": 25000.0,
+   "price_max": 50000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 0
+  },
+  {
+   "id": 2,
+   "name": "Below-Knee Modular Leg with Dynamic Foot",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Ottobock / Ossur",
+   "description": "Lightweight modular pylon system with silicone liner, pin/lock or suction suspension and energy-storing carbon foot for natural push-off while walking.",
+   "price_min": 50000.0,
+   "price_max": 200000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 1
+  },
+  {
+   "id": 3,
+   "name": "Sports / Carbon-Fibre Running Foot",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Ossur Flex-Run / Ottobock",
+   "description": "Carbon-fibre J-shaped running blade for active users and athletes. High energy return for running, jumping and sports.",
+   "price_min": 150000.0,
+   "price_max": 450000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 2
+  },
+  {
+   "id": 4,
+   "name": "Above-Knee (Transfemoral) Prosthesis \u2013 Mechanical Knee",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Ottobock / Endolite",
+   "description": "Complete above-knee leg with manual-lock or polycentric mechanical knee joint, quad socket and cushioned foot. Reliable and affordable.",
+   "price_min": 60000.0,
+   "price_max": 150000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 3
+  },
+  {
+   "id": 5,
+   "name": "Above-Knee Prosthesis \u2013 Hydraulic Knee",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Endolite / Blatchford",
+   "description": "Hydraulic swing-control knee provides smooth variable-speed walking, stair descent support and better symmetry.",
+   "price_min": 150000.0,
+   "price_max": 350000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 4
+  },
+  {
+   "id": 6,
+   "name": "Microprocessor Knee (C-Leg / Genium class)",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Ottobock",
+   "description": "Computer-controlled knee that adapts to walking speed, ramps and stairs in real time. The world standard for above-knee amputees. Includes training & warranty.",
+   "price_min": 500000.0,
+   "price_max": 2500000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 5
+  },
+  {
+   "id": 7,
+   "name": "Partial Foot / Toe Prosthesis",
+   "category": "Lower Limb Prosthetics",
+   "brand": "Custom silicone & thermoplastic",
+   "description": "Cosmetic-cum-functional replacements for toe and partial-foot amputations, colour-matched to your skin.",
+   "price_min": 15000.0,
+   "price_max": 45000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "sort": 6
+  },
+  {
+   "id": 8,
+   "name": "Below-Elbow Body-Powered Prosthetic Hand",
+   "category": "Upper Limb Prosthetics",
+   "brand": "Indian-made / Ottobock",
+   "description": "Harness-operated terminal device (hook or hand) \u2014 rugged, dependable and easy to maintain for daily work.",
+   "price_min": 30000.0,
+   "price_max": 60000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "sort": 7
+  },
+  {
+   "id": 9,
+   "name": "Myoelectric (Bionic) Hand \u2013 Single Grip",
+   "category": "Upper Limb Prosthetics",
+   "brand": "Ottobock / Chinese OEM",
+   "description": "Muscle-signal controlled electric hand with voluntary open/close. Rechargeable battery, natural appearance. Training included.",
+   "price_min": 200000.0,
+   "price_max": 500000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "sort": 8
+  },
+  {
+   "id": 10,
+   "name": "Multi-Grip Bionic Hand with App Control",
+   "category": "Upper Limb Prosthetics",
+   "brand": "Ossur / Ottobock Michelangelo class",
+   "description": "Multi-articulating hand with 12+ grip patterns, Bluetooth app tuning, thumb rotation and water-resistant design.",
+   "price_min": 500000.0,
+   "price_max": 1500000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "sort": 9
+  },
+  {
+   "id": 11,
+   "name": "Cosmetic Silicone Hand / Arm",
+   "category": "Upper Limb Prosthetics",
+   "brand": "Custom-made",
+   "description": "Lifelike passive cosmetic glove colour-matched to your skin, with nail detail. Restores appearance.",
+   "price_min": 15000.0,
+   "price_max": 35000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "sort": 10
+  },
+  {
+   "id": 12,
+   "name": "AFO Foot-Drop Splint",
+   "category": "Orthotics & Braces",
+   "brand": "In-house / Vissco",
+   "description": "Lightweight polypropylene ankle-foot orthosis for foot drop due to stroke, polio or nerve injury. Ready sizes and custom-moulded options.",
+   "price_min": 1500.0,
+   "price_max": 4500.0,
+   "image": null,
+   "featured": 1,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 11
+  },
+  {
+   "id": 13,
+   "name": "Ground-Reaction AFO (GRAFO)",
+   "category": "Orthotics & Braces",
+   "brand": "In-house fabrication",
+   "description": "Solid/hinged AFO tuned to control knee buckling in cerebral palsy and weak quadriceps. Custom-moulded to cast.",
+   "price_min": 4500.0,
+   "price_max": 12000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 12
+  },
+  {
+   "id": 14,
+   "name": "KAFO Calipers with Locking Knee Joints",
+   "category": "Orthotics & Braces",
+   "brand": "In-house fabrication",
+   "description": "Knee-ankle-foot orthosis with drop-lock / offset knee joints for polio survivors and spinal-cord injury. Metal or lightweight PP construction.",
+   "price_min": 8000.0,
+   "price_max": 25000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 13
+  },
+  {
+   "id": 15,
+   "name": "TLSO Spinal Brace (Boston / Milwaukee type)",
+   "category": "Orthotics & Braces",
+   "brand": "In-house fabrication",
+   "description": "Thoraco-lumbo-sacral orthosis for scoliosis correction and post-fracture support, moulded to the patient's trunk.",
+   "price_min": 6000.0,
+   "price_max": 18000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 14
+  },
+  {
+   "id": 16,
+   "name": "Cervical Collar / Lumbar Sacral Belt",
+   "category": "Orthotics & Braces",
+   "brand": "Vissco / Turbo",
+   "description": "Ready-to-wear neck collars and back belts for spondylosis, disc problems and post-surgical support.",
+   "price_min": 400.0,
+   "price_max": 2500.0,
+   "image": null,
+   "featured": 0,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 15
+  },
+  {
+   "id": 17,
+   "name": "Upper-Limb Splints (Wrist, Cock-up, Thumb)",
+   "category": "Orthotics & Braces",
+   "brand": "In-house fabrication",
+   "description": "Fracture, tendon-injury and nerve-palsy splints moulded from thermoplastic sheet to the patient's arm.",
+   "price_min": 800.0,
+   "price_max": 3500.0,
+   "image": null,
+   "featured": 0,
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "sort": 16
+  },
+  {
+   "id": 18,
+   "name": "Custom Foot Insoles (Biomechanical)",
+   "category": "Foot Care & Insoles",
+   "brand": "In-house / Formthotics",
+   "description": "Pressure-mapped custom insoles for flat feet, plantar fasciitis, heel spurs and sports use. 3D-scanned to your feet.",
+   "price_min": 1500.0,
+   "price_max": 5000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Diabetic Foot Care & Diabetic Footwear",
+   "sort": 17
+  },
+  {
+   "id": 19,
+   "name": "Diabetic MCR Footwear (Custom)",
+   "category": "Foot Care & Insoles",
+   "brand": "In-house fabrication",
+   "description": "Total-contact microcellular-rubber footwear for diabetic feet \u2014 ulcer prevention and healing support, moulded to foot impression.",
+   "price_min": 2000.0,
+   "price_max": 6000.0,
+   "image": null,
+   "featured": 1,
+   "service": "Diabetic Foot Care & Diabetic Footwear",
+   "sort": 18
+  },
+  {
+   "id": 20,
+   "name": "Silicone Prosthetic Socks & Liners",
+   "category": "Accessories & Care",
+   "brand": "Ottobock / Alps",
+   "description": "Cushioning silicone liners and prosthetic socks for socket comfort and volume management. Sold per piece.",
+   "price_min": 300.0,
+   "price_max": 25000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Repair, Maintenance & Upgrades",
+   "sort": 19
+  },
+  {
+   "id": 21,
+   "name": "Wheelchair / Walker / Crutches",
+   "category": "Mobility Aids",
+   "brand": "Falcon / Karma / Indian brands",
+   "description": "Standard and lightweight wheelchairs, walkers, elbow crutches and axillary crutches \u2014 fitted and adjusted to the user.",
+   "price_min": 800.0,
+   "price_max": 35000.0,
+   "image": null,
+   "featured": 0,
+   "service": "Rehabilitation & Gait Training",
+   "sort": 20
+  }
+ ],
+ "settings": [
+  {
+   "key": "phone",
+   "value": "+91 81305 46090"
+  },
+  {
+   "key": "whatsapp",
+   "value": "918130546090"
+  },
+  {
+   "key": "email",
+   "value": "care@orthoproindia.com"
+  },
+  {
+   "key": "address",
+   "value": "OrthoPro India, Near Uttam Nagar Metro, New Delhi \u2013 110059"
+  },
+  {
+   "key": "hours",
+   "value": "Mon\u2013Sat: 9:00 AM \u2013 7:00 PM | Sunday: By appointment"
+  },
+  {
+   "key": "map_url",
+   "value": "https://maps.google.com/?q=OrthoPro+India+Uttam+Nagar+Delhi"
+  },
+  {
+   "key": "gmb_url",
+   "value": "https://g.page/orthoproindia"
+  },
+  {
+   "key": "facebook",
+   "value": "https://facebook.com/orthoproindia"
+  },
+  {
+   "key": "instagram",
+   "value": "https://instagram.com/orthoproindia"
+  },
+  {
+   "key": "youtube",
+   "value": "https://youtube.com/@orthoproindia"
+  },
+  {
+   "key": "domain",
+   "value": "https://www.orthoproindia.com"
+  },
+  {
+   "key": "admin_key",
+   "value": "eNa1WwtCzqyIOg"
+  }
+ ],
+ "journeys": [
+  {
+   "id": 1,
+   "title": "From Wheelchair to Wedding: Ramesh's Walking Journey",
+   "patient_name": "Ramesh K.",
+   "area": "Uttam Nagar, Delhi",
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "story": "Ramesh, a 42-year-old tailor, lost his right leg below the knee in a road accident in 2023. For eight months he stayed home, dependent on his family, his work stopped.\n\nHe came to OrthoPro India on a neighbour's reference. After a detailed stump assessment we fitted a modular below-knee prosthesis with a silicone liner and dynamic-response foot. In the check-socket trial he stood and took his first three steps the same day \u2014 and cried.\n\nOver the next ten days he completed alignment, gait training on our parallel bars and stairs practice. At his 3-month review he was cycling to his shop. Last year he danced at his daughter's wedding.\n\n\"I lost a leg in the accident,\" he says, \"but I got my life back here.\" ",
+   "before_image": "/static/img/journey-before-1.jpg",
+   "after_image": "/static/img/journey-after-1.jpg",
+   "video": "",
+   "featured": 1,
+   "created_at": "2026-08-01 10:00:00"
+  },
+  {
+   "id": 2,
+   "title": "Standing Tall at 9: Aisha's Cerebral Palsy Story",
+   "patient_name": "Aisha S.",
+   "area": "Dwarka, Delhi",
+   "service": "Pediatric Prosthetics & Orthotics for Children",
+   "story": "Aisha was born with spastic cerebral palsy and could not stand unsupported at age 6. Multiple therapies had helped her strength, but her ankles kept collapsing inward.\n\nOur pediatric team fitted her with custom ground-reaction AFOs moulded from 3D scans, followed by a 12-session gait-training programme designed as games \u2014 balloon taps, treasure walks and music steps.\n\nWithin four months Aisha stood unsupported. By month eight she walked the length of her classroom holding one rail. Her school reports she now joins morning assembly standing, like every other child.\n\nHer parents bring her for growth reviews every five months \u2014 and she insists on showing every visitor how fast she can walk.",
+   "before_image": "/static/img/journey-before-2.jpg",
+   "after_image": "/static/img/journey-after-2.jpg",
+   "video": "",
+   "featured": 1,
+   "created_at": "2026-08-01 10:00:00"
+  },
+  {
+   "id": 3,
+   "title": "Beating Diabetic Ulcers: Sunita Devi's Feet Saved",
+   "patient_name": "Sunita D.",
+   "area": "Janakpuri, Delhi",
+   "service": "Diabetic Foot Care & Diabetic Footwear",
+   "story": "Sunita Devi, 61, had lived with diabetes for 18 years when a blister on her left sole refused to heal for three months. Another hospital had warned her about possible amputation.\n\nAt our foot clinic, pressure mapping showed extreme loading under her metatarsal heads. We fabricated total-contact MCR insoles and custom diabetic shoes that completely offloaded the wound site, alongside wound care with her physician.\n\nThe ulcer healed fully in nine weeks. Two years on, her feet remain ulcer-free with daily insole use and 6-monthly reviews.\n\n\"The shoes look simple,\" she says, \"but they saved my legs.\" ",
+   "before_image": "/static/img/journey-before-3.jpg",
+   "after_image": "/static/img/journey-after-3.jpg",
+   "video": "",
+   "featured": 1,
+   "created_at": "2026-08-01 10:00:00"
+  }
+ ],
+ "posts": [
+  {
+   "id": 1,
+   "title": "Artificial Leg Price in India 2026: Complete Cost Guide by Type",
+   "slug": "artificial-leg-price-in-india-2026",
+   "excerpt": "How much does an artificial leg cost in India in 2026? Below-knee legs from \u20b925,000, above-knee from \u20b960,000, microprocessor knees \u20b95\u201325 lakh. Full price breakdown.",
+   "body": "One of the first questions every amputee family asks is: *\"How much will the artificial leg cost?\"* Prices in India vary enormously \u2014 from \u20b915,000 to \u20b925 lakh \u2014 because the cost depends on the amputation level, socket technology, knee/foot components and brand. Here is a transparent breakdown for 2026.\n\n## Below-Knee (Transtibial) Prosthetic Leg Prices\n\n| Type | Price Range |\n|------|-------------|\n| Basic PP socket + SACH foot | \u20b925,000 \u2013 \u20b950,000 |\n| Modular leg with silicone liner | \u20b950,000 \u2013 \u20b91,20,000 |\n| Carbon dynamic-response foot upgrade | \u20b91,00,000 \u2013 \u20b92,00,000 |\n| Sports/running blade | \u20b91,50,000 \u2013 \u20b94,50,000 |\n\nBelow-knee prostheses are cheaper because your own knee joint is preserved \u2014 the device only replaces the ankle and foot.\n\n## Above-Knee (Transfemoral) Prosthetic Leg Prices\n\nThe knee mechanism dominates the price:\n\n| Knee Technology | Total Leg Price |\n|-----------------|-----------------|\n| Manual-lock mechanical knee | \u20b960,000 \u2013 \u20b91,50,000 |\n| Polycentric / single-axis knee | \u20b990,000 \u2013 \u20b92,00,000 |\n| Hydraulic knee | \u20b91,50,000 \u2013 \u20b93,50,000 |\n| Microprocessor knee (C-Leg class) | \u20b95,00,000 \u2013 \u20b925,00,000 |\n\n## What Actually Drives the Cost?\n\n1. **Socket fabrication** \u2014 hand-laminated carbon sockets cost more than polypropylene but are thinner, lighter and more durable.\n2. **Suspension system** \u2014 cushions, sleeves, pin-lock or vacuum systems each add cost but dramatically improve comfort.\n3. **Foot and knee components** \u2014 imported Ottobock/Ossur components carry premium pricing and warranties.\n4. **Clinical service** \u2014 assessment, casting, test sockets, alignment and gait training. Beware of quotes that skip these; a leg without proper alignment causes pain and skin damage.\n\n## Can You Get Financial Help?\n\nYes. The Government of India's **ADIP scheme** provides free/subsidised limbs to eligible BPL patients. CGHS, ECHS and several private policies reimburse prosthetics. Many NGOs (BMVSS/Jaipur Foot and others) run free camps. Our clinic assists with all documentation.\n\n## Our Advice\n\nNever buy by price alone \u2014 buy by *fit*. A \u20b930,000 well-fitted leg outperforms a \u20b93,00,000 poorly fitted one. Always insist on a test-socket trial and gait training in writing before paying.\n\n**Book a free consultation at OrthoPro India \u2014 call +91 81305 46090.**",
+   "image": "",
+   "keywords": "artificial leg price india 2026, prosthetic leg cost, below knee prosthesis price, above knee artificial limb price",
+   "status": "published",
+   "created_at": "2026-09-01 09:00:00"
+  },
+  {
+   "id": 2,
+   "title": "Bionic Hand Price in India: Myoelectric Hands Explained (2026)",
+   "slug": "bionic-hand-price-in-india",
+   "excerpt": "Myoelectric bionic hand prices in India: single-grip from \u20b92 lakh, multi-grip \u20b95\u201315 lakh. What affects cost, training needs and choosing the right hand.",
+   "body": "Myoelectric \u2014 \"bionic\" \u2014 hands read the tiny electrical signals your forearm muscles produce and translate them into grip. For many upper-limb amputees they restore real function: eating, dressing, typing, carrying. But prices vary enormously. Here's the honest 2026 picture.\n\n## Price Ranges\n\n| Class | Price in India |\n|-------|----------------|\n| Body-powered hook/hand | \u20b930,000 \u2013 \u20b960,000 |\n| Cosmetic passive glove | \u20b915,000 \u2013 \u20b935,000 |\n| Single-grip myoelectric hand | \u20b92,00,000 \u2013 \u20b95,00,000 |\n| Multi-grip bionic hand (app-controlled) | \u20b95,00,000 \u2013 \u20b915,00,000 |\n| Premium imported multi-articulating | \u20b915,00,000+ |\n\n## What Changes the Price?\n\n- **Number of motors and grip patterns** \u2014 a two-electrode single-grip hand is the entry point; 12-pattern hands cost many times more.\n- **Wrist rotation** \u2014 powered rotators add function and cost.\n- **Socket and control quality** \u2014 targeted electrodes, good suspension and a well-made socket determine whether the hand feels natural.\n- **Training** \u2014 hands are useless without training. Any quote should include 3\u20135 supervised myoelectric training sessions.\n\n## Who Should Consider Which Option?\n\n- **Heavy physical work** \u2192 body-powered hook wins on durability and feedback.\n- **Daily tasks + appearance** \u2192 single-grip myoelectric is the sweet spot for most users.\n- **Fine manipulation (typing, tools, cooking)** \u2192 multi-grip hands shine.\n\n## Before You Buy\n\n1. Get an EMG/muscle-signal check \u2014 very weak signals may suit body-powered better.\n2. Trial the actual hand in clinic before paying the balance.\n3. Ask about battery life, warranty and local serviceability.\n\nAt OrthoPro India we trial, fit and train on myoelectric hands with full aftercare. **Call +91 81305 46090 for a free upper-limb assessment.**",
+   "image": "",
+   "keywords": "bionic hand price india, myoelectric hand cost, artificial hand price 2026",
+   "status": "published",
+   "created_at": "2026-09-01 09:00:00"
+  },
+  {
+   "id": 3,
+   "title": "Diabetic Foot Care: How the Right Footwear Prevents Amputation",
+   "slug": "diabetic-foot-care-footwear-prevents-amputation",
+   "excerpt": "Why diabetic feet ulcerate, how custom MCR footwear and insoles offload pressure, and the daily habits that prevent diabetic foot amputation.",
+   "body": "In India, a leg is amputated due to diabetic foot complications every few minutes \u2014 and the tragedy is that the overwhelming majority of these amputations are preventable. The single most effective prevention tool costs less than a smartphone: proper diabetic footwear.\n\n## Why Diabetic Feet Are Vulnerable\n\nYears of high blood sugar damage two systems:\n- **Nerves** \u2014 you lose protective sensation. A pebble in your shoe causes a blister you never feel.\n- **Blood vessels** \u2014 poor circulation turns small wounds into slow, non-healing ulcers.\n\nAdd foot deformities (hammer toes, collapsed arches) and you get abnormal pressure points. That pressure, repeated thousands of steps a day, kills tissue \u2192 ulcer \u2192 infection \u2192 amputation.\n\n## How Custom Footwear Breaks the Chain\n\n1. **Total-contact insoles** spread body weight across the entire sole instead of 3\u20134 hot spots.\n2. **MCR (microcellular rubber)** is soft, shock-absorbing and skin-friendly.\n3. **Extra-depth shoes** with seamless interiors remove friction on bony prominences.\n4. Pressure-mapping verifies the ulcer site is truly offloaded.\n\nStudies consistently show custom therapeutic footwear reduces ulcer recurrence by 30\u201350%.\n\n## The Daily 5-Minute Routine Every Diabetic Must Follow\n\n- Inspect the soles every evening (use a mirror or ask family).\n- Never walk barefoot \u2014 not even indoors.\n- Check inside shoes before wearing them.\n- Moisturise dry skin (but never between toes).\n- Get feet examined professionally at least every 6 months.\n\nAt OrthoPro India we screen diabetic feet, map pressure, and fabricate custom MCR footwear in-house \u2014 usually within a week. **Book a foot-risk check: +91 81305 46090.**",
+   "image": "",
+   "keywords": "diabetic foot care india, diabetic footwear, prevent diabetic amputation, MCR chappal",
+   "status": "published",
+   "created_at": "2026-09-01 09:00:00"
+  }
+ ],
+ "testimonials": [
+  {
+   "id": 1,
+   "name": "Mohan Singh",
+   "rating": 5,
+   "text": "Fitted my father's above-knee leg here. The team was patient, explained every step, and the price was exactly what they quoted. Father is walking independently now.",
+   "approved": 1
+  },
+  {
+   "id": 2,
+   "name": "Farzana B.",
+   "rating": 5,
+   "text": "My son's AFO braces were made perfectly and adjusted twice without any extra charge. Very genuine people.",
+   "approved": 1
+  },
+  {
+   "id": 3,
+   "name": "Rajiv Malhotra",
+   "rating": 5,
+   "text": "I compared four clinics in Delhi before choosing OrthoPro. Best gait training by far \u2014 they actually teach you to walk properly, not just hand over the leg.",
+   "approved": 1
+  },
+  {
+   "id": 4,
+   "name": "Kavita Sharma",
+   "rating": 4,
+   "text": "Good experience with diabetic footwear. Foot-risk check was thorough. Slight wait on my second visit but staff kept us informed.",
+   "approved": 1
+  },
+  {
+   "id": 5,
+   "name": "Gurpreet S.",
+   "rating": 5,
+   "text": "Got my myoelectric hand fitted and trained here. Training sessions made all the difference \u2014 I use it daily for cooking and office work.",
+   "approved": 1
+  },
+  {
+   "id": 6,
+   "name": "Happy Patient",
+   "rating": 5,
+   "text": "Great service",
+   "approved": 0
+  }
+ ],
+ "patients": [
+  {
+   "id": 1,
+   "name": "Ramesh Kumar",
+   "age": "42",
+   "gender": "Male",
+   "phone": "98110 22334",
+   "email": "",
+   "area": "Uttam Nagar",
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "product": "Modular BK leg with dynamic foot",
+   "status": "active",
+   "notes": "Road accident case. Happy with fit. Check liner wear.",
+   "next_followup": "2026-09-10",
+   "created_at": "2026-08-01 10:00:00"
+  },
+  {
+   "id": 2,
+   "name": "Aisha Siddiqui",
+   "age": "9",
+   "gender": "Female",
+   "phone": "99530 11223",
+   "email": "",
+   "area": "Dwarka",
+   "service": "Pediatric Prosthetics & Orthotics for Children",
+   "product": "Ground-reaction AFO pair",
+   "status": "active",
+   "notes": "CP patient. Growth review due; parents very cooperative.",
+   "next_followup": "2026-09-09",
+   "created_at": "2026-08-02 10:00:00"
+  },
+  {
+   "id": 3,
+   "name": "Sunita Devi",
+   "age": "61",
+   "gender": "Female",
+   "phone": "98680 44556",
+   "email": "",
+   "area": "Janakpuri",
+   "service": "Diabetic Foot Care & Diabetic Footwear",
+   "product": "Custom MCR footwear + insoles",
+   "status": "active",
+   "notes": "Ulcer healed. 6-monthly foot review.",
+   "next_followup": "2026-09-15",
+   "created_at": "2026-08-03 10:00:00"
+  },
+  {
+   "id": 4,
+   "name": "Mohan Singh",
+   "age": "67",
+   "gender": "Male",
+   "phone": "98710 55667",
+   "email": "",
+   "area": "Rohini",
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "product": "AK leg, mechanical knee",
+   "status": "active",
+   "notes": "Weight gain reported \u2014 socket may need ply sock adjustment.",
+   "next_followup": "2026-09-12",
+   "created_at": "2026-08-04 10:00:00"
+  },
+  {
+   "id": 5,
+   "name": "Gurpreet Kaur",
+   "age": "34",
+   "gender": "Female",
+   "phone": "98100 77889",
+   "email": "",
+   "area": "Rajouri Garden",
+   "service": "Upper Limb Prosthetics (Artificial Hands & Arms)",
+   "product": "Myoelectric hand single-grip",
+   "status": "active",
+   "notes": "Training complete. Annual service check.",
+   "next_followup": "2026-09-20",
+   "created_at": "2026-08-05 10:00:00"
+  },
+  {
+   "id": 6,
+   "name": "Vikram Joshi",
+   "age": "51",
+   "gender": "Male",
+   "phone": "99990 33445",
+   "email": "",
+   "area": "Najafgarh",
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "product": "KAFO calipers",
+   "status": "active",
+   "notes": "Polio case. Left knee joint squeaking \u2014 repair scheduled.",
+   "next_followup": "2026-09-08",
+   "created_at": "2026-08-06 10:00:00"
+  }
+ ],
+ "appointments": [
+  {
+   "id": 1,
+   "name": "Anil Verma",
+   "phone": "98123 45678",
+   "email": "",
+   "area": "Hari Nagar",
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "preferred_date": "2026-09-12",
+   "message": "Brother lost leg in accident. Need price for below-knee leg.",
+   "status": "new",
+   "created_at": "2026-09-07 11:30:00"
+  },
+  {
+   "id": 2,
+   "name": "Pooja Rathi",
+   "phone": "99711 23456",
+   "email": "",
+   "area": "Gurugram",
+   "service": "Diabetic Foot Care & Diabetic Footwear",
+   "preferred_date": "2026-09-11",
+   "message": "Mother's foot ulcer not healing since 6 weeks.",
+   "status": "new",
+   "created_at": "2026-09-06 11:30:00"
+  },
+  {
+   "id": 3,
+   "name": "Shakeel Ahmad",
+   "phone": "98990 12345",
+   "email": "",
+   "area": "Tilak Nagar",
+   "service": "Orthotics & Braces (AFO, KAFO, Spinal & Body Braces)",
+   "preferred_date": "",
+   "message": "Father has foot drop after stroke. Need AFO.",
+   "status": "confirmed",
+   "created_at": "2026-09-05 11:30:00"
+  },
+  {
+   "id": 4,
+   "name": "Demo Visitor",
+   "phone": "9812345670",
+   "email": "",
+   "area": "Uttam Nagar",
+   "service": "Lower Limb Prosthetics (Artificial Legs)",
+   "preferred_date": "",
+   "message": "demo",
+   "status": "new",
+   "created_at": "2026-09-08 11:07:33"
+  }
+ ],
+ "followups": [
+  {
+   "id": 1,
+   "patient_id": 1,
+   "due_date": "2026-09-08",
+   "note": "Quarterly alignment check + liner inspection",
+   "status": "pending",
+   "created_at": "2026-09-01 10:00:00"
+  },
+  {
+   "id": 2,
+   "patient_id": 2,
+   "due_date": "2026-09-09",
+   "note": "AFO growth review \u2014 child outgrowing fast",
+   "status": "pending",
+   "created_at": "2026-09-01 10:00:00"
+  },
+  {
+   "id": 3,
+   "patient_id": 3,
+   "due_date": "2026-09-15",
+   "note": "6-monthly diabetic foot screening",
+   "status": "pending",
+   "created_at": "2026-09-01 10:00:00"
+  },
+  {
+   "id": 4,
+   "patient_id": 6,
+   "due_date": "2026-09-08",
+   "note": "KAFO knee joint repair pickup",
+   "status": "pending",
+   "created_at": "2026-09-01 10:00:00"
+  }
+ ]
+}

@@ -1,0 +1,31 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Patient Journeys{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1>📖 Patient Journey Stories (shown on website)</h1>
+  <a href="/admin/journeys/new" class="btn btn-p">+ Add Journey</a>
+</div>
+<div class="tbl-wrap"><table>
+  <tr><th style="width:110px">Before/After</th><th>Title</th><th>Patient</th><th>Area</th><th>Service</th><th>Featured</th><th>Actions</th></tr>
+  {% for j in items %}
+  <tr>
+    <td><div style="display:flex;gap:4px">
+      <img src="{{ j.before_image }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px">
+      <img src="{{ j.after_image }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px">
+    </div></td>
+    <td><b>{{ j.title }}</b><br><span class="muted">{{ j.story[:80] }}…</span></td>
+    <td>{{ j.patient_name }}</td>
+    <td>{{ j.area }}</td>
+    <td>{{ j.service.split('(')[0] if j.service else '—' }}</td>
+    <td>{{ '⭐ Yes' if j.featured else '—' }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-xs btn-o" href="/journey/{{ j.id }}" target="_blank">View</a>
+      <a class="btn btn-xs btn-o" href="/admin/journeys/{{ j.id }}/edit">Edit</a>
+      <form method="post" action="/admin/journeys/{{ j.id }}/delete" style="display:inline" data-confirm="Remove this journey from the website?">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-d">Delete</button></form>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="muted">No journeys published yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

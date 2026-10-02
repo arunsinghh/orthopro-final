@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Reviews{% endblock %}
+{% block content %}
+<div class="topbar"><h1>⭐ Patient Reviews</h1></div>
+<p class="muted" style="margin-bottom:14px">Reviews submitted via the website form appear here. Approve to show them publicly.</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Name</th><th>Rating</th><th>Review</th><th>Status</th><th>Actions</th></tr>
+  {% for r in items %}
+  <tr>
+    <td><b>{{ r.name }}</b></td>
+    <td><span class="stars">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span></td>
+    <td style="max-width:420px">{{ r.text }}</td>
+    <td>{% if r.approved %}<span class="tag tag-ok">approved</span>{% else %}<span class="tag tag-new">pending</span>{% endif %}</td>
+    <td style="white-space:nowrap">
+      <form method="post" action="/admin/reviews/{{ r.id }}/toggle" style="display:inline">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-o">{{ 'Unpublish' if r.approved else 'Approve' }}</button></form>
+      <form method="post" action="/admin/reviews/{{ r.id }}/delete" style="display:inline" data-confirm="Delete review?">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-d">Delete</button></form>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="muted">No reviews yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

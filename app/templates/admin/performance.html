@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Staff Performance{% endblock %}
+{% block content %}
+<div class="topbar"><h1>📊 Staff Performance</h1></div>
+
+<div class="card" style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap">
+  {% for r,label in [('all','All time'),('month','This month'),('week','Last 7 days')] %}
+  <a class="btn btn-xs {{ 'btn-p' if rng==r else 'btn-o' }}" href="/admin/performance?range={{ r }}">{{ label }}</a>
+  {% endfor %}
+  <span class="muted" style="align-self:center;font-size:.85em">Numbers come live from leads &amp; their outcome history.</span>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="tbl-wrap"><table>
+    <tr><th>Staff</th><th>Assigned<br>leads</th><th>📅 Appoint-<br>ments</th><th>🔁 Follow-<br>ups</th><th>⏸ Holds</th><th>✖ Lost</th><th>✅ Completed</th><th>Last activity</th><th></th></tr>
+    {% for r in stats %}
+    <tr>
+      <td><b>{{ r.name }}</b>{% if not r.active %} <span class="tag tag-due">disabled</span>{% endif %}</td>
+      <td><b>{{ r.assigned }}</b></td>
+      <td>{{ r.appt }}</td>
+      <td>{{ r.fu }}</td>
+      <td>{{ r.hold }}</td>
+      <td>{{ r.lost }}</td>
+      <td><b style="color:var(--ok,#16a34a)">{{ r.done }}</b></td>
+      <td class="muted">{{ r.last[:10] if r.last else '—' }}</td>
+      <td>{% if can('leads') %}<a class="btn btn-xs btn-o" href="/admin/leads?staff={{ r.id }}">View leads →</a>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" class="muted">No staff accounts yet — create one under “Staff &amp; Permissions”.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ p.serial_no }} — {{ p.name }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1>{{ p.name }} <span class="tag tag-new" style="font-size:.6em;vertical-align:middle">{{ p.serial_no }}</span></h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    {% if p.phone %}<a class="btn btn-o" href="tel:{{ p.phone }}">📞 Call</a>
+    {% set wa = (p.phone or '') | replace('+','') | replace(' ','') %}
+    {% if wa %}<a class="btn btn-o" target="_blank" rel="noopener" href="https://wa.me/{{ wa }}">💬 WhatsApp</a>{% endif %}{% endif %}
+    <a class="btn btn-o" href="/admin/patients">← All Patients</a>
+  </div>
+</div>
+
+{# ------------------------------------------------ pipeline tracker #}
+<div class="card">
+  <h3 style="margin-top:0">🦿 Treatment Pipeline
+    {% if p.completed_cycles %}<span class="muted" style="font-weight:400;font-size:.8em">· completed {{ p.completed_cycles }} time(s)</span>{% endif %}</h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px">
+    {% for s in stages %}
+    <div style="padding:8px 12px;border-radius:99px;font-size:.85em;font-weight:600;
+      {% if s==p.pipeline_stage %}background:#0e7490;color:#fff
+      {% elif loop.index0 < current_idx %}background:#d1fae5;color:#065f46
+      {% else %}background:#f1f5f9;color:#64748b{% endif %}">
+      {{ loop.index }}. {{ labels[s] }}</div>
+    {% endfor %}
+  </div>
+  {% if p.pipeline_stage != 'completed' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <form method="post" action="/admin/patients/{{ p.id }}/stage" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      {{ csrf_field() }}
+      <input type="hidden" name="stage" value="next">
+      <input name="note" placeholder="optional note…" style="min-width:200px">
+      <button class="btn btn-p" style="font-size:1.05em">Move to {{ labels[next_stage] }} →</button>
+    </form>
+    <form method="post" action="/admin/patients/{{ p.id }}/stage" style="display:flex;gap:6px">
+      {{ csrf_field() }}
+      <select name="stage">{% for s in stages %}<option value="{{ s }}" {{ 'selected' if s==p.pipeline_stage }}>{{ labels[s] }}</option>{% endfor %}</select>
+      <button class="btn btn-o btn-xs">Jump to stage</button>
+    </form>
+  </div>
+  {% else %}
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="tag tag-ok" style="font-size:1em;padding:8px 14px">✅ Pipeline Completed</span>
+    <form method="post" action="/admin/patients/{{ p.id }}/stage" style="display:flex;gap:8px">
+      {{ csrf_field() }}
+      <input type="hidden" name="stage" value="reopen">
+      <input name="note" placeholder="reason for repeat visit…" style="min-width:200px">
+      <button class="btn btn-p">🔄 Re-open Pipeline (repeat visit)</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{# ------------------------------------------------ amounts #}
+<div class="card">
+  <h3 style="margin-top:0">💰 Payment</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
+    <div style="text-align:center;background:#f8fafc;border-radius:10px;padding:10px">
+      <div class="muted">Total (Quotation)</div><b style="font-size:1.3em">₹{{ '%0.0f' | format(p.total_amount) }}</b></div>
+    <div style="text-align:center;background:#f0fdfa;border-radius:10px;padding:10px">
+      <div class="muted">Advance Received</div><b style="font-size:1.3em;color:#0e7490">₹{{ '%0.0f' | format(p.advance_amount) }}</b></div>
+    <div style="text-align:center;background:#fffbeb;border-radius:10px;padding:10px">
+      <div class="muted">Balance</div><b style="font-size:1.3em;color:#b45309">₹{{ '%0.0f' | format(balance) }}</b></div>
+  </div>
+  <form method="post" action="/admin/patients/{{ p.id }}/amounts" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+    {{ csrf_field() }}
+    <div><label>Total ₹</label><input name="total_amount" value="{{ '%0.2f' | format(p.total_amount) }}"></div>
+    <div><label>Advance ₹</label><input name="advance_amount" value="{{ '%0.2f' | format(p.advance_amount) }}"></div>
+    <button class="btn btn-p btn-xs">Save Amounts</button>
+  </form>
+</div>
+
+{# ------------------------------------------------ details #}
+<div class="card">
+  <h3 style="margin-top:0">👤 Details</h3>
+  <form method="post" action="/admin/patients/{{ p.id }}/save" class="fgrid">
+    {{ csrf_field() }}
+    <div><label>Name</label><input name="name" value="{{ p.name }}"></div>
+    <div><label>Phone</label><input name="phone" value="{{ p.phone }}"></div>
+    <div><label>Area</label><input name="area" value="{{ p.area }}"></div>
+    <div><label>Registered</label><input value="{{ p.created_at[:10] if p.created_at else '' }}" disabled></div>
+    <div class="full"><label>Notes</label><textarea name="notes" rows="2">{{ p.notes }}</textarea></div>
+    <div class="full" style="display:flex;gap:8px">
+      <button class="btn btn-p btn-xs">Save Details</button>
+    </div>
+  </form>
+</div>
+
+{# ------------------------------------------------ follow-ups for this patient #}
+<div class="card">
+  <h3 style="margin-top:0">🔔 Follow-ups</h3>
+  {% for f in fups %}
+  <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid #f1f5f9;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
+      {% if f.status=='pending' and f.due_date <= today %}<span class="tag tag-due">due</span>
+      {% elif f.status=='pending' %}<span class="tag tag-pen">pending</span>
+      {% else %}<span class="tag tag-ok">done</span>{% endif %}
+      <b>{{ f.due_date | dshort }}</b> — {{ f.note or f.purpose or 'follow-up' }}</div>
+    {% if f.status=='pending' %}
+    <form method="post" action="/admin/followups/{{ f.id }}/complete" style="display:inline">
+      {{ csrf_field() }}<button class="btn btn-xs btn-p">✓ Done</button></form>
+    {% endif %}
+  </div>
+  {% else %}<p class="muted">No follow-ups for this patient.</p>{% endfor %}
+  <form method="post" action="/admin/followups/new" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+    {{ csrf_field() }}
+    <input type="hidden" name="patient_id" value="{{ p.id }}">
+    <input type="date" name="due_date" value="{{ today }}">
+    <input name="note" placeholder="e.g. call for review" style="flex:1;min-width:160px">
+    <button class="btn btn-o btn-xs">+ Follow-up</button>
+  </form>
+</div>
+
+{# ------------------------------------------------ history #}
+<div class="card">
+  <h3 style="margin-top:0">🕒 Lifetime History</h3>
+  <p class="muted" style="margin-top:0">Every stage change is recorded and never overwritten.</p>
+  {% for srow in history %}
+  <div style="padding:6px 0;border-top:1px solid #f1f5f9">
+    <b>{{ srow.created_at[:10] if srow.created_at else '' }}</b> —
+    <span class="tag tag-new">{{ labels.get(srow.stage, srow.stage) }}</span>
+    {% if srow.note %}<span class="muted">{{ srow.note }}</span>{% endif %}</div>
+  {% else %}<p class="muted">No history yet.</p>{% endfor %}
+  {% if leads %}
+  <h4 style="margin-bottom:2px">Leads</h4>
+  {% for l in leads %}<div style="padding:5px 0;border-top:1px solid #f1f5f9" class="muted">
+    {{ l.created_at[:10] if l.created_at else '' }} — {{ l.source or 'Admin' }}{% if l.platform %} / {{ l.platform }}{% endif %}
+    · status: {{ l.status }}</div>{% endfor %}
+  {% endif %}
+</div>
+
+<div style="text-align:right;margin-top:8px">
+  <form method="post" action="/admin/patients/{{ p.id }}/delete" style="display:inline"
+    data-confirm="Delete this patient and all their history? This cannot be undone.">
+    {{ csrf_field() }}<button class="btn btn-o btn-xs" style="color:#b91c1c">🗑 Delete Patient</button>
+  </form>
+</div>
+{% endblock %}

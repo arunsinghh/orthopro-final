@@ -1,0 +1,26 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1>🦿 Products &amp; Prices (shown on website)</h1>
+  <a href="/admin/products/new" class="btn btn-p">+ Add Product</a>
+</div>
+<div class="tbl-wrap"><table>
+  <tr><th>Product</th><th>Category</th><th>Brand</th><th>Price Range</th><th>Featured</th><th>Actions</th></tr>
+  {% for p in items %}
+  <tr>
+    <td><b>{{ p.name }}</b><br><span class="muted">{{ p.description[:70] }}{% if p.description|length > 70 %}…{% endif %}</span></td>
+    <td>{{ p.category }}</td>
+    <td>{{ p.brand }}</td>
+    <td style="white-space:nowrap"><b>{{ p.price_min | inr }}</b>{% if p.price_max > p.price_min %} – {{ p.price_max | inr }}{% endif %}</td>
+    <td>{{ '⭐' if p.featured else '—' }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-xs btn-o" href="/admin/products/{{ p.id }}/edit">Edit</a>
+      <form method="post" action="/admin/products/{{ p.id }}/delete" style="display:inline" data-confirm="Remove {{ p.name }} from the website?">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-d">Delete</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

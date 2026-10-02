@@ -1,0 +1,45 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Media Library{% endblock %}
+{% block content %}
+<div class="topbar"><h1>🖼️ Media Library — Images &amp; Videos</h1></div>
+
+<div class="card">
+  <h2>Upload Images / Videos</h2>
+  <form method="post" enctype="multipart/form-data" class="fgrid" style="margin-top:8px">
+  {{ csrf_field() }}
+    <div class="full"><label>Select files (jpg, png, webp, gif, mp4, webm — multiple allowed)</label>
+      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov"></div>
+    <div class="full" style="margin-top:8px">
+      <label style="display:flex;gap:8px;align-items:center;font-weight:600">
+        <input type="checkbox" name="show_gallery" value="1"> 🖼 Show on the public Gallery page
+      </label>
+    </div>
+    <div class="full" style="margin-top:14px"><button class="btn btn-p">⬆ Upload Files</button></div>
+  </form>
+  <p class="muted" style="margin-top:8px">After uploading, use each file's URL in Products, Journeys or Blog posts. Videos can also be linked from YouTube.</p>
+</div>
+
+{% if items %}
+<div class="media-grid">
+  {% for md in items %}
+  <div class="media-i">
+    {% if md.kind == 'video' %}
+      <video src="/uploads/{{ md.filename }}" muted preload="metadata"></video>
+    {% else %}
+      <img src="/uploads/{{ md.filename }}" alt="{{ md.orig_name }}" loading="lazy">
+    {% endif %}
+    <div class="mi-body">
+      <div>{{ md.orig_name }}</div>
+      <code>/uploads/{{ md.filename }}</code>
+      <button type="button" class="btn btn-xs btn-o" data-copy="/uploads/{{ md.filename }}">Copy URL</button>
+      <form method="post" action="/admin/media/{{ md.id }}/delete" style="display:inline" data-confirm="Delete this file permanently?">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-d">Delete</button></form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card"><p class="muted">Media library is empty. Upload your clinic photos, before/after images and patient videos above.</p></div>
+{% endif %}
+{% endblock %}

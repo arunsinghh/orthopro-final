@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/" style="color:#bfeef7">Home</a> › Gallery</div>
+    <h1>Product Gallery — Photos &amp; Videos</h1>
+    <p>See the artificial limbs, braces, footwear and mobility aids we fit every day,
+       and short videos from our clinic. Every product is customised to each patient.</p>
+  </div>
+</div>
+
+{% if videos %}
+<section>
+  <div class="wrap">
+    <h2 style="margin-bottom:18px">🎬 Videos</h2>
+    <div class="svc-grid">
+      {% set titles = {'products-showcase': 'Our Prosthetic Products', 'patient-care': 'Fitting, Repair & Home Care', 'braces-supports': 'Braces, Footwear & Mobility Aids'} %}
+      {% for v in videos %}
+      <div class="svc-card">
+        <div class="ph" style="height:auto;background:#0f172a">
+          <video controls preload="metadata" playsinline style="width:100%;display:block;aspect-ratio:16/9">
+            <source src="/uploads/{{ v.filename }}" type="video/mp4">
+            Your browser does not support video playback.
+          </video>
+        </div>
+        <div class="bd">
+          <h3>{{ titles.get(v.orig_name.split('.')[0], v.orig_name.rsplit('.',1)[0] | replace('-',' ') | replace('_',' ') | title) }}</h3>
+          <p>Short clinic video — no sound.</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section {% if videos %}class="bg-alt"{% endif %}>
+  <div class="wrap">
+    <h2 style="margin-bottom:18px">📷 Product Photos</h2>
+    {% if images %}
+    <div class="svc-grid">
+      {% for im in images %}
+      <a class="svc-card" href="/uploads/{{ im.filename }}" target="_blank" rel="noopener">
+        <div class="ph" style="height:260px">
+          <img src="/uploads/{{ im.filename }}" alt="{{ im.orig_name | replace('-',' ') | replace('.jpg','') }} — OrthoPro Artificial Limbs Center"
+               loading="lazy" width="1200" height="800">
+        </div>
+        <div class="bd"><h3>{{ im.orig_name | replace('-',' ') | replace('_',' ') | replace('.jpg','') | title }}</h3></div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="sub">Photos are being added — check back soon, or call us to see products in person.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="center">
+  <div class="wrap">
+    <h2>Want to See These in Person?</h2>
+    <p class="sub">Visit our Delhi centre — we'll show you every option and let you try before you decide.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a href="/contact" class="btn btn-primary">Book a Free Visit</a>
+      <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-outline">📞 {{ settings.phone }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <h1>Walk Again. Live Fully.<br>Delhi's Trusted Artificial Limb Center</h1>
+    <p>Certified prosthetists &amp; orthotists fitting artificial legs from <b>₹25,000</b>, bionic hands, braces and diabetic footwear — with 3D scanning, gait training and 1-year free follow-up.</p>
+    <a href="/contact" class="btn btn-primary">Book Free Consultation</a>&nbsp;&nbsp;
+    <a href="https://wa.me/{{ settings.whatsapp }}" class="btn btn-ghost" rel="noopener">WhatsApp an Expert</a>
+    <div class="hero-badges">
+      <span>✔ Certified Prosthetist–Orthotist Team</span>
+      <span>✔ Ottobock · Ossur · Endolite Components</span>
+      <span>✔ 3D Scanning &amp; In-House Workshop</span>
+      <span>✔ Home Visits Across Delhi NCR</span>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div><b>15+</b><span>Years Clinical Experience</span></div>
+    <div><b>2,000+</b><span>Successful Patient Cases</span></div>
+    <div><b>4.9★</b><span>Google Patient Rating</span></div>
+    <div><b>100%</b><span>Personalized Treatment</span></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2 class="center">Our Specialized Services</h2>
+    <p class="sub">From artificial legs and bionic hands to spinal braces and diabetic foot protection — complete rehabilitation under one roof.</p>
+    <div class="grid g3">
+      {% for s in services %}
+      <div class="card">
+        <div class="ic">{{ s.icon }}</div>
+        <h3><a href="/services/{{ s.slug }}">{{ s.name }}</a></h3>
+        <p>{{ s.short }}</p>
+        <p><a href="/services/{{ s.slug }}">Learn more →</a></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="bg-alt">
+  <div class="wrap">
+    <h2 class="center">Your Treatment Journey With Us</h2>
+    <p class="sub">A clear, step-by-step path from your first call to walking independently — no surprises, no hidden charges.</p>
+    <div class="jt">
+      <div class="jt-step"><div class="jt-med">📞<span class="jt-num">1</span></div>
+        <div class="jt-card"><h4>Free Consultation</h4><p>Phone, WhatsApp or in-clinic discussion of your condition, goals and budget.</p></div></div>
+      <div class="jt-step"><div class="jt-med">📐<span class="jt-num">2</span></div>
+        <div class="jt-card"><h4>Assessment &amp; Casting</h4><p>Biomechanical evaluation, stump/foot casting or 3D laser scanning.</p></div></div>
+      <div class="jt-step"><div class="jt-med">🛠️<span class="jt-num">3</span></div>
+        <div class="jt-card"><h4>Design &amp; Fabrication</h4><p>Custom socket/device built in our workshop with your chosen components.</p></div></div>
+      <div class="jt-step"><div class="jt-med">🦿<span class="jt-num">4</span></div>
+        <div class="jt-card"><h4>Trial &amp; Alignment</h4><p>Test-socket trial, dynamic alignment and comfort adjustments.</p></div></div>
+      <div class="jt-step"><div class="jt-med">🚶<span class="jt-num">5</span></div>
+        <div class="jt-card"><h4>Gait Training</h4><p>Physiotherapist-supervised walking, stairs and ramp practice.</p></div></div>
+      <div class="jt-step"><div class="jt-med">🎓<span class="jt-num">6</span></div>
+        <div class="jt-card"><h4>Delivery &amp; Education</h4><p>Device handover with care booklet and family training.</p></div></div>
+      <div class="jt-step"><div class="jt-med">🔄<span class="jt-num">7</span></div>
+        <div class="jt-card"><h4>Follow-Up Reviews</h4><p>Free reviews at 2 weeks, 6 weeks, 3 months and 12 months.</p></div></div>
+      <div class="jt-step gold"><div class="jt-med">🛡️<span class="jt-num">8</span></div>
+        <div class="jt-card"><h4>Lifetime Support</h4><p>Repairs, upgrades and socket refits whenever you need them.</p></div></div>
+    </div>
+    <div class="jt-cta">
+      <h3>Ready to take Step 1?</h3>
+      <p>The first consultation is completely free — talk to us today.</p>
+      <a href="/contact" class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b">Book Free Consultation</a>
+      <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-ghostw">📞 {{ settings.phone }}</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="center">Popular Products &amp; Transparent Prices</h2>
+    <p class="sub">Every price includes assessment, fabrication, fitting and gait training. <a href="/prices">View full price list →</a></p>
+    <div class="grid g3">
+      {% for p in products %}
+      <div class="prod">
+        {% set img = p.image or product_image(p.name) %}
+        {% if img %}<img src="{{ img }}" alt="{{ p.name }}" loading="lazy">
+        {% else %}<div class="ph" style="background:linear-gradient(135deg,var(--cl),#dbeafe)"></div>{% endif %}
+        <div class="prod-body">
+          <span class="cat">{{ p.category }}</span>
+          <h3>{{ p.name }}</h3>
+          <div class="price">{{ p.price_min | inr }} – {{ p.price_max | inr }}</div>
+          <p>{{ p.brand }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="center" style="margin-top:28px"><a href="/prices" class="btn btn-outline">See All Products &amp; Prices</a></p>
+  </div>
+</section>
+
+<section class="bg-white">
+  <div class="wrap">
+    <h2 class="center">Patient Success Stories</h2>
+    <p class="sub">Real patients. Real recoveries. See journeys like yours. <a href="/journeys">All stories →</a></p>
+    <div class="grid g3">
+      {% for j in journeys %}
+      <div class="j-card">
+        <div class="ba">
+          <img src="{{ j.before_image }}" alt="Before treatment – {{ j.title }}" loading="lazy">
+          <img src="{{ j.after_image }}" alt="After treatment – {{ j.title }}" loading="lazy">
+        </div>
+        <div class="j-body">
+          <span class="tag">{{ j.service.split('(')[0] }}</span>
+          <h3><a href="/journey/{{ j.id }}">{{ j.title }}</a></h3>
+          <p>{{ j.story[:150] }}…</p>
+          <p><a href="/journey/{{ j.id }}">Read full story →</a></p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="reviews">
+  <div class="wrap">
+    <h2 class="center">What Our Patients Say</h2>
+    <p class="sub">{% if rstat.c %}★ {{ "%.1f"|format(rstat.a) }} / 5 average from {{ rstat.c }} patient review{{ 's' if rstat.c != 1 }} · {% endif %}<a href="{{ settings.google_reviews_url }}" rel="noopener">Read our Google Reviews →</a></p>
+    <div class="grid g3">
+      {% for r in reviews %}
+      <div class="rev">
+        <div class="stars">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</div>
+        <p>"{{ r.text }}"</p>
+        <b>— {{ r.name }}</b>{% if r.source == 'google' %} <small style="color:var(--mut)"> · Google review</small>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card" style="max-width:560px;margin:34px auto 0">
+      <h3 class="center">Share Your Experience</h3>
+      <form class="labeled" method="post" action="/review">
+  {{ csrf_field() }}
+        <label for="rname">Your Name</label>
+        <input id="rname" name="name" required>
+        <label for="rrate">Your Rating</label>
+        <select id="rrate" name="rating">
+          <option value="5">★★★★★ Excellent</option><option value="4">★★★★ Very Good</option>
+          <option value="3">★★★ Good</option><option value="2">★★ Fair</option><option value="1">★ Poor</option>
+        </select>
+        <label for="rtext">Your Feedback</label>
+        <textarea id="rtext" name="text" rows="3" required></textarea>
+        <p style="margin-top:14px"><button class="btn btn-primary btn-sm">Submit Review</button></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="bg-alt">
+  <div class="wrap center">
+    <h2>Ready to Take the First Step?</h2>
+    <p class="sub">Free consultation · No obligation · Honest advice on what you actually need.</p>
+    <a href="/contact" class="btn btn-primary">Book Your Free Consultation</a>&nbsp;&nbsp;
+    <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-outline">📞 {{ settings.phone }}</a>
+  </div>
+</section>
+{% endblock %}

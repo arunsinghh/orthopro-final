@@ -1,0 +1,27 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Blog Posts{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1>✍️ Blog / SEO Guides</h1>
+  <a href="/admin/posts/new" class="btn btn-p">+ Write New Guide</a>
+</div>
+<p class="muted" style="margin-bottom:14px">Search-friendly articles are the #1 way clinics rank on Google. Write about prices, conditions, and recovery — like the seeded examples.</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Title</th><th>URL Slug</th><th>Status</th><th>Published</th><th>Actions</th></tr>
+  {% for p in items %}
+  <tr>
+    <td><b>{{ p.title }}</b></td>
+    <td><span class="muted">/blog/{{ p.slug }}</span></td>
+    <td>{% if p.status=='published' %}<span class="tag tag-ok">published</span>{% else %}<span class="tag tag-new">draft</span>{% endif %}</td>
+    <td>{{ p.created_at[:10] }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-xs btn-o" href="/blog/{{ p.slug }}" target="_blank">View</a>
+      <a class="btn btn-xs btn-o" href="/admin/posts/{{ p.id }}/edit">Edit</a>
+      <form method="post" action="/admin/posts/{{ p.id }}/delete" style="display:inline" data-confirm="Delete this post?">
+  {{ csrf_field() }}
+        <button class="btn btn-xs btn-d">Delete</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

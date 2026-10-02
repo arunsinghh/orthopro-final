@@ -1,0 +1,29 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Edit' if p else 'New' }} Post{% endblock %}
+{% block content %}
+<div class="topbar"><h1>{{ 'Edit Guide' if p else 'Write New SEO Guide' }}</h1>
+<a href="/admin/posts" class="btn btn-o">← Back</a></div>
+<div class="card">
+<form method="post" class="fgrid">
+  {{ csrf_field() }}
+  <div class="full"><label>Title * (include keywords people search, e.g. "price", city name)</label>
+    <input name="title" required value="{{ p.title if p else '' }}"></div>
+  <div class="full"><label>URL Slug (lowercase, hyphens)</label>
+    <input name="slug" value="{{ p.slug if p else '' }}" placeholder="auto-generated from title if left blank"></div>
+  <div class="full"><label>Excerpt (shown in Google results — keep under 160 chars)</label>
+    <textarea name="excerpt" rows="2">{{ p.excerpt if p else '' }}</textarea></div>
+  <div class="full"><label>Body (simple markdown: ## headings, **bold**, - lists, | tables |)</label>
+    <textarea name="body" rows="18">{{ p.body if p else '' }}</textarea></div>
+  <div class="full"><label>Cover Image URL (optional)</label>
+    <input name="image" value="{{ p.image if p else '' }}"></div>
+  <div class="full"><label>SEO Keywords (comma separated)</label>
+    <input name="keywords" value="{{ p.keywords if p else '' }}"></div>
+  <div><label>Status</label>
+    <select name="status">
+      <option value="published" {{ 'selected' if p and p.status=='published' }}>Published</option>
+      <option value="draft" {{ 'selected' if p and p.status=='draft' }}>Draft (hidden)</option>
+    </select></div>
+  <div class="full" style="margin-top:18px"><button class="btn btn-p">{{ 'Save Post' if p else 'Publish Post' }}</button></div>
+</form>
+</div>
+{% endblock %}

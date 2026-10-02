@@ -1,0 +1,199 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Patients{% endblock %}
+{% block content %}
+<div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1 style="margin:0">👥 Patients</h1>
+    <p class="muted" style="margin:4px 0 0">
+      Master clinical directory: manage patient profiles, prosthetic &amp; orthotic pipelines, and treatment stages.
+    </p>
+  </div>
+  <div>
+    <button type="button" onclick="openAddPatientModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
+      <span style="font-size:1.1rem;font-weight:700">➕</span>
+      <span>Add Patient</span>
+    </button>
+  </div>
+</div>
+
+<!-- Add Patient Modal Overlay -->
+<div id="add-patient-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <h2 style="margin:0;font-size:1.25rem;display:flex;align-items:center;gap:8px">
+        <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
+        Register New Patient
+      </h2>
+      <button type="button" onclick="closeAddPatientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
+    </div>
+
+    <form method="post" action="/admin/patients/new" class="fgrid">
+      {{ csrf_field() }}
+      <div><label>Patient Full Name *</label><input name="name" required placeholder="e.g. Ramesh Kumar"></div>
+      <div><label>Phone Number</label><input name="phone" placeholder="+91 98765 43210"></div>
+      <div><label>Area / City</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
+      <div><label>Lead / Referral Source</label>
+        <select name="source">
+          {% for s in sources %}<option>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="full"><label>Clinical / Initial Note</label>
+        <textarea name="notes" rows="3" placeholder="e.g. Below-knee prosthesis evaluation, accident 6 months ago..." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
+      </div>
+      <div class="full" style="font-size:.82rem;color:var(--mut);margin-top:6px">
+        💡 Serial number is assigned automatically ({{ today[2:4] }}{{ today[5:7] }} + monthly patient index).
+      </div>
+      <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-o" onclick="closeAddPatientModal()">Cancel</button>
+        <button type="submit" class="btn btn-p" style="background:#f97316;border-color:#ea580c">+ Register Patient</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modern Filter & Search Panel -->
+<div class="card" style="padding:14px 18px;margin-bottom:16px;background:#fff;border-radius:12px">
+  <!-- Top Category Filter Pills -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+    <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">DIRECTORY:</span>
+    <a class="btn btn-xs {{ 'btn-p' if not stage_f and not due_f else 'btn-o' }}" href="/admin/patients?q={{ q }}" style="border-radius:99px;padding:4px 12px">
+      👥 All Patients <span class="badge {{ 'badge-w' if not stage_f and not due_f else '' }}">{{ counts.all }}</span>
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if stage_f=='active' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if stage_f=='active' else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}" href="/admin/patients?stage={{ 'all' if stage_f=='active' else 'active' }}&q={{ q }}">
+      ⚡ Active Pipeline <span class="badge" style="{{ 'background:#fff;color:#0e7490' if stage_f=='active' else 'background:#0e7490;color:#fff' }}">{{ counts.active }}</span>
+      {% if stage_f=='active' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if stage_f=='completed' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if stage_f=='completed' else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/patients?stage={{ 'all' if stage_f=='completed' else 'completed' }}&q={{ q }}">
+      ✅ Completed <span class="badge" style="{{ 'background:#fff;color:#16a34a' if stage_f=='completed' else 'background:#16a34a;color:#fff' }}">{{ counts.completed }}</span>
+      {% if stage_f=='completed' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if due_f=='1' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#dc2626;border-color:#dc2626;color:#fff' if due_f=='1' else 'color:#b91c1c;border-color:#fecaca;background:#fef2f2' }}" href="/admin/patients?due={{ '0' if due_f=='1' else '1' }}&q={{ q }}">
+      💳 Balance Due <span class="badge" style="{{ 'background:#fff;color:#dc2626' if due_f=='1' else 'background:#dc2626;color:#fff' }}">{{ counts.due }}</span>
+      {% if due_f=='1' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+  </div>
+
+  <!-- Search & Stage Filters -->
+  <form method="get" action="/admin/patients" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    {% if stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
+    {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
+    <div style="flex:2;min-width:220px">
+      <input type="search" name="q" value="{{ q or '' }}" placeholder="🔍 Search by serial # (e.g. 26091), patient name, phone, area..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
+    </div>
+    <div style="flex:1;min-width:180px">
+      <select name="stage" style="padding:7px 12px;font-size:.88rem;border-radius:8px" onchange="this.form.submit()">
+        <option value="">All Stages ({{ stages|length }})</option>
+        {% for k, name in stages.items() %}
+        <option value="{{ k }}" {{ 'selected' if stage_f==k }}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-xs btn-p" type="submit" style="padding:7px 16px;border-radius:8px">Search</button>
+    {% if q or stage_f or due_f %}
+    <a class="btn btn-xs btn-o" href="/admin/patients" style="padding:7px 12px;border-radius:8px">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Header Count -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 4px 10px;flex-wrap:wrap;gap:8px">
+  <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+    <span>{{ ('Results for “' ~ q ~ '”') if q else 'Patient Directory' }}</span>
+    <span class="badge badge-w" style="font-size:.85rem">{{ rows|length }}</span>
+  </h3>
+</div>
+
+<!-- Patients List -->
+{% for p in rows %}
+<div class="card" style="padding:16px 20px;margin-bottom:12px;border-left:5px solid {{ '#16a34a' if p.pipeline_stage=='completed' else '#0e7490' }};border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+  <!-- Serial Number -->
+  <div style="min-width:85px">
+    <span style="font-size:1.15rem;font-weight:800;color:#0e7490;display:block">#{{ p.serial_no }}</span>
+    <span class="muted" style="font-size:.75rem">{{ p.created_at[:10] if p.created_at else '' }}</span>
+  </div>
+
+  <!-- Patient Details -->
+  <div style="flex:1;min-width:240px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <a href="/admin/patients/{{ p.id }}" style="font-size:1.1rem;font-weight:700;color:var(--dark)">{{ p.name }}</a>
+      {% if p.phone %}<span class="muted" style="font-weight:600">{{ p.phone }}</span>{% endif %}
+    </div>
+
+    <div style="margin:4px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      {% if p.area %}<span class="muted" style="font-size:.83rem">📍 {{ p.area }}</span>{% endif %}
+      {% if p.notes %}<span class="muted" style="font-size:.83rem">· 📝 {{ p.notes[:70] }}{{ '…' if p.notes|length > 70 else '' }}</span>{% endif %}
+    </div>
+
+    <!-- Tags Row -->
+    <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      {% if p.pipeline_stage %}
+      <span class="tag {{ 'tag-ok' if p.pipeline_stage=='completed' else 'tag-pen' }}" style="font-size:.78rem;padding:2px 10px">
+        {{ stages.get(p.pipeline_stage, p.pipeline_stage) }}
+      </span>
+      {% else %}
+      <span class="tag tag-new" style="font-size:.78rem">no pipeline</span>
+      {% endif %}
+
+      {% set bal = (p.total_amount | float) - (p.advance_amount | float) %}
+      {% if bal > 0 %}
+      <span class="tag tag-due" style="font-size:.78rem">₹{{ '%0.0f' | format(bal) }} due</span>
+      {% elif p.total_amount and (p.total_amount | float) > 0 %}
+      <span class="tag tag-ok" style="font-size:.78rem">✓ Paid</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Direct Actions -->
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto">
+    {% if p.phone %}
+    {% set wa = (p.phone or '') | replace('+','') | replace(' ','') | replace('-','') %}
+    {% if wa %}
+    {% set wa_text = "Hello " ~ (p.name or '') ~ ", contacting you from OrthoPro Artificial Limbs Center. How can we assist you today?" %}
+    <a class="btn btn-xs" target="_blank" rel="noopener" href="https://web.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:600;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+      💬 WhatsApp
+    </a>
+    {% endif %}
+    <a class="btn btn-xs btn-o" href="tel:{{ p.phone }}" style="padding:6px 12px;border-radius:6px">📞 Call</a>
+    {% endif %}
+
+    <a href="/admin/patients/{{ p.id }}" class="btn btn-xs btn-p" style="padding:6px 14px;border-radius:6px">
+      View Profile →
+    </a>
+  </div>
+</div>
+{% else %}
+<div class="card muted" style="text-align:center;padding:36px 20px">
+  <div style="font-size:2rem;margin-bottom:8px">📭</div>
+  <b>{{ 'No patient matches that search.' if q else 'No patients yet — add your first patient above.' }}</b>
+  <p style="margin:6px 0 12px;font-size:.88rem">Try changing the directory filters or register a new patient.</p>
+  {% if q or stage_f or due_f %}
+  <a class="btn btn-xs btn-o" href="/admin/patients">Clear Filters</a>
+  {% endif %}
+</div>
+{% endfor %}
+
+<script>
+function openAddPatientModal() {
+  var modal = document.getElementById("add-patient-modal");
+  if (modal) {
+    modal.style.display = "flex";
+    var first = modal.querySelector("input[name='name']");
+    if (first) setTimeout(function() { first.focus(); }, 60);
+  }
+}
+function closeAddPatientModal() {
+  var modal = document.getElementById("add-patient-modal");
+  if (modal) modal.style.display = "none";
+}
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeAddPatientModal();
+});
+document.addEventListener("click", function(e) {
+  var modal = document.getElementById("add-patient-modal");
+  if (modal && e.target === modal) closeAddPatientModal();
+});
+if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
+  openAddPatientModal();
+}
+</script>
+{% endblock %}

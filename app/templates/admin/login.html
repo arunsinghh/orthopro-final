@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login · OrthoPro</title>
+<link rel="stylesheet" href="/static/css/admin.css?v=4">
+</head>
+<body style="background:var(--dark)">
+<div class="login-box">
+  <div class="brand">🦿 OrthoPro Artificial Limbs Center</div>
+  <p style="text-align:center;color:var(--mut);margin-bottom:8px">Staff Login</p>
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+  {% if msgs %}{% for cat, msg in msgs %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+  <form method="post" autocomplete="on">
+  {{ csrf_field() }}
+    <label for="u">Username</label>
+    <input id="u" name="username" required autofocus autocomplete="username">
+    <label for="p">Password</label>
+    <input id="p" name="password" type="password" required autocomplete="current-password">
+    <p style="margin-top:20px"><button class="btn btn-p" style="width:100%">Login</button></p>
+  </form>
+  <p style="margin-top:16px;font-size:.78rem;color:var(--mut);text-align:center">
+    Authorized staff only. Failed attempts are logged and rate-limited.</p>
+</div>
+</body>
+</html>

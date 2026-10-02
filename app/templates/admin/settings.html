@@ -1,0 +1,26 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="topbar"><h1>⚙️ Clinic Settings</h1></div>
+<div class="card">
+  <p class="muted">These details appear across the website (header, footer, contact page, schema markup) and drive local SEO.</p>
+  <form method="post" class="fgrid">
+  {{ csrf_field() }}
+    <div><label>Primary Phone</label><input name="phone" value="{{ vals.phone }}"></div>
+    <div><label>WhatsApp Number (digits only, with country code)</label><input name="whatsapp" value="{{ vals.whatsapp }}"></div>
+    <div><label>Email</label><input name="email" value="{{ vals.email }}"></div>
+    <div><label>Timings</label><input name="hours" value="{{ vals.hours }}"></div>
+    <div class="full"><label>Full Address</label><input name="address" value="{{ vals.address }}"></div>
+    <div><label>Google Maps Directions URL</label><input name="map_url" value="{{ vals.map_url }}"></div>
+    <div><label>Google Business / Reviews URL</label><input name="gmb_url" value="{{ vals.gmb_url }}"></div>
+    <div><label>Facebook URL</label><input name="facebook" value="{{ vals.facebook }}"></div>
+    <div><label>Instagram URL</label><input name="instagram" value="{{ vals.instagram }}"></div>
+    <div><label>YouTube URL</label><input name="youtube" value="{{ vals.youtube }}"></div>
+    <div><label>Website Domain (for SEO canonical/sitemap)</label><input name="domain" value="{{ vals.domain }}"></div>
+    <div class="full" style="margin-top:24px"><h2>Change Admin Login</h2></div>
+    <div><label>New Username (leave to keep current)</label><input name="admin_user" value="{{ vals.admin_user }}" autocomplete="off"></div>
+    <div><label>New Password (leave blank to keep current — min 12 chars, mixed case, digit, symbol)</label><input name="admin_pass" type="password" autocomplete="new-password"></div>
+    <div class="full" style="margin-top:20px"><button class="btn btn-p">💾 Save Settings</button></div>
+  </form>
+</div>
+{% endblock %}

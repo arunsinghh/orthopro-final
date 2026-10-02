@@ -1,0 +1,35 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Edit' if p else 'Add' }} Product{% endblock %}
+{% block content %}
+<div class="topbar"><h1>{{ 'Edit Product' if p else 'Add Product & Price' }}</h1>
+<a href="/admin/products" class="btn btn-o">← Back</a></div>
+<div class="card">
+<form method="post" class="fgrid">
+  {{ csrf_field() }}
+  <div class="full"><label>Product Name *</label><input name="name" required value="{{ p.name if p else '' }}" placeholder="e.g. Below-Knee Modular Leg with Dynamic Foot"></div>
+  <div><label>Category *</label>
+    <select name="category">
+      {% for cc in cats %}<option {{ 'selected' if p and p.category==cc }}>{{ cc }}</option>{% endfor %}
+    </select></div>
+  <div><label>Brand</label><input name="brand" value="{{ p.brand if p else '' }}" placeholder="e.g. Ottobock / Ossur / In-house"></div>
+  <div><label>Minimum Price (₹) *</label><input name="price_min" type="number" step="1" required value="{{ p.price_min | int if p else '' }}"></div>
+  <div><label>Maximum Price (₹)</label><input name="price_max" type="number" step="1" value="{{ p.price_max | int if p else '' }}"></div>
+  <div><label>Related Service</label>
+    <select name="service"><option value="">—</option>
+      {% for s in services %}<option {{ 'selected' if p and p.service==s }}>{{ s }}</option>{% endfor %}
+    </select></div>
+  <div><label>Featured on Homepage</label>
+    <select name="featured"><option value="1" {{ 'selected' if p and p.featured }}>Yes</option><option value="0" {{ 'selected' if p and not p.featured }}>No</option></select></div>
+  <div class="full"><label>Description</label><textarea name="description" rows="4" placeholder="What's included, who it's for, key features…">{{ p.description if p else '' }}</textarea></div>
+  <div class="full"><label>Product Image</label>
+    <select data-fill="#pimg">
+      <option value="">— pick from Media Library —</option>
+      {% for md in media if md.kind=='image' %}<option value="/uploads/{{ md.filename }}">{{ md.orig_name }}</option>{% endfor %}
+    </select>
+    <p class="muted">Or paste any image URL:</p>
+    <input id="pimg" name="image" value="{{ p.image if p else '' }}" placeholder="/uploads/xyz.jpg or https://…">
+  </div>
+  <div class="full" style="margin-top:18px"><button class="btn btn-p">{{ 'Save Product' if p else 'Add Product to Website' }}</button></div>
+</form>
+</div>
+{% endblock %}

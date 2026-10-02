@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › Guides</div>
+    <h1>Prosthetics &amp; Orthotics Guides</h1>
+    <p>Practical, jargon-free guides on prices, technology, recovery and daily care — written by our clinical team.</p>
+  </div>
+</div>
+<section>
+  <div class="wrap">
+    <div class="grid g3">
+      {% for p in posts %}
+      <div class="card">
+        <span class="tag">{{ p.created_at[:10] }}</span>
+        <h3><a href="/blog/{{ p.slug }}">{{ p.title }}</a></h3>
+        <p>{{ p.excerpt }}</p>
+        <p><a href="/blog/{{ p.slug }}">Read guide →</a></p>
+      </div>
+      {% else %}
+      <p>New guides coming soon.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

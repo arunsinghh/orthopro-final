@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">Home</a> › <a href="/journeys">Patient Journeys</a> › {{ j.patient_name }}</div>
+    <h1>{{ j.title }}</h1>
+    <p>{{ j.patient_name }} · {{ j.area }} · {{ j.service }}</p>
+  </div>
+</div>
+<section>
+  <div class="wrap prose">
+    <div class="grid g2" style="margin-bottom:24px">
+      <figure><img src="{{ j.before_image }}" alt="Before treatment – {{ j.title }}"><figcaption class="center" style="color:var(--mut);font-size:.85rem">Before</figcaption></figure>
+      <figure><img src="{{ j.after_image }}" alt="After treatment – {{ j.title }}"><figcaption class="center" style="color:var(--mut);font-size:.85rem">After</figcaption></figure>
+    </div>
+    {% for para in j.story.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+    {% if j.video %}
+      {% if 'youtube' in j.video or 'youtu.be' in j.video %}
+        <iframe class="vid" src="https://www.youtube.com/embed/{{ j.video.split('v=')[-1].split('/')[-1].split('?')[0] }}" title="Patient journey video" loading="lazy" allowfullscreen></iframe>
+      {% else %}
+        <video class="vid" controls preload="metadata"><source src="{{ j.video }}"></video>
+      {% endif %}
+    {% endif %}
+    <div class="card" style="margin-top:30px;background:var(--cl);border:0">
+      <h3>Facing a Similar Condition?</h3>
+      <p style="margin:8px 0 14px">Talk to our team about your case — consultations are free.</p>
+      <a href="/contact" class="btn btn-primary btn-sm">Book Consultation</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

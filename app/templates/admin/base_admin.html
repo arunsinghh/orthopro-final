@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Admin{% endblock %} · OrthoPro Admin</title>
+<link rel="stylesheet" href="/static/css/admin.css?v=4">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <a class="brand" href="/admin">🦿 OrthoPro <span style="color:#67e8f9">Admin</span></a>
+    {% if admin_name %}<div style="padding:0 16px 10px;font-size:.82em;color:#94a3b8">
+      👤 {{ admin_name }}</div>{% endif %}
+    <nav>
+      <a href="/admin" class="{{ 'on' if section=='dashboard' }}">🏠 Dashboard</a>
+      {% if can('leads') %}<a href="/admin/leads" class="{{ 'on' if section=='leads' }}">📞 {{ 'My Leads' if current_role != 'super_admin' else 'Leads' }}</a>{% endif %}
+      {% if can('patients') %}<a href="/admin/patients" class="{{ 'on' if section=='patients' }}">👥 Patients</a>{% endif %}
+      {% if can('followups') %}<a href="/admin/followups" class="{{ 'on' if section=='followups' }}">🔔 Follow-ups {% if notif_count %}<span class="badge">{{ notif_count }}</span>{% endif %}</a>{% endif %}
+      {% if can('reports') %}<a href="/admin/performance" class="{{ 'on' if section=='performance' }}">📊 Staff Performance</a>{% endif %}
+
+      {% if can('website') %}
+      <div class="navgroup">WEBSITE</div>
+      <details class="subnav" {{ 'open' if section in ('journeys','products','posts','reviews','media') }}>
+        <summary>🌐 Website</summary>
+        <a href="/admin/journeys" class="{{ 'on' if section=='journeys' }}">📖 Patient Journeys</a>
+        <a href="/admin/products" class="{{ 'on' if section=='products' }}">🦿 Products &amp; Prices</a>
+        <a href="/admin/posts" class="{{ 'on' if section=='posts' }}">✍️ Blog / SEO</a>
+        <a href="/admin/reviews" class="{{ 'on' if section=='reviews' }}">⭐ Reviews</a>
+        <a href="/admin/media" class="{{ 'on' if section=='media' }}">🖼️ Media Library</a>
+      </details>
+      {% endif %}
+
+      {% if can('staff') or can('settings') %}<div class="navgroup">MANAGEMENT</div>{% endif %}
+      {% if can('staff') %}<a href="/admin/staff" class="{{ 'on' if section=='staff' }}">🧑‍💼 Staff &amp; Permissions</a>{% endif %}
+      {% if can('settings') %}<a href="/admin/settings" class="{{ 'on' if section=='settings' }}">⚙️ Settings</a>{% endif %}
+
+      <a href="/" target="_blank" style="margin-top:16px;border-top:1px solid #1e293b;padding-top:14px">🌐 View Website ↗</a>
+      <a href="/admin/logout">🚪 Logout</a>
+    </nav>
+  </aside>
+  <div class="main">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}{% for cat, msg in msgs %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+<script src="/static/js/admin.js" defer></script>
+</body>
+</html>

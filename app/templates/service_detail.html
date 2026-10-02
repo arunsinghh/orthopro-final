@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/" style="color:#bfeef7">Home</a> › <a href="/services" style="color:#bfeef7">Services</a> › {{ s.name }}</div>
+    <h1>{{ s.name }}</h1>
+    <p>{{ s.short }}</p>
+  </div>
+</div>
+<section style="padding:0">
+  <div class="wrap" style="transform:translateY(-40px)">
+    <img src="/static/img/services/{{ s.slug }}.jpg" alt="{{ s.name }} at OrthoPro Artificial Limbs Center"
+      style="width:100%;max-height:420px;object-fit:cover;border-radius:18px;
+             box-shadow:0 12px 34px rgba(15,60,80,.18)" width="1200" height="800">
+  </div>
+</section>
+<section style="padding-top:0">
+  <div class="wrap prose">
+    {% for para in s.description.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+
+    {% if s.subcategories %}
+    <h2>What We Offer in {{ s.name.split('(')[0].strip() }}</h2>
+    <div class="svc-grid" style="margin-top:6px">
+      {% for sc in s.subcategories %}
+      <div class="svc-card">
+        <div class="ph" style="height:210px">
+          {% if sc.img %}
+          <img src="{{ sc.img }}" alt="{{ sc.title }} – OrthoPro Artificial Limbs Center" loading="lazy" width="1200" height="800">
+          {% else %}
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;
+                      font-size:60px;background:linear-gradient(135deg,#e0f2fe,#f0fdfa)">{{ sc.icon }}</div>
+          {% endif %}
+        </div>
+        <div class="bd">
+          <h3>{{ sc.title }}</h3>
+          <p>{{ sc.desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <h2>Who Is This For?</h2>
+    <ul class="check">
+      {% for line in s.who_for.split('\n') %}{% if line.strip() %}<li>{{ line.replace('•','').strip() }}</li>{% endif %}{% endfor %}
+    </ul>
+
+    <h2>Our Step-by-Step Process</h2>
+    <div class="tbl-wrap"><table>
+      {% for line in s.process.split('\n') %}{% if line.strip() %}
+      <tr><td style="white-space:nowrap;font-weight:700;color:var(--c)">Step {{ loop.index }}</td><td>{{ line[3:] if line[0].isdigit() else line }}</td></tr>
+      {% endif %}{% endfor %}
+    </table></div>
+
+    {% if prods %}
+    <h2>Related Products &amp; Prices</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>Product</th><th>Brand</th><th>Price Range</th></tr>
+      {% for p in prods %}
+      <tr><td>{{ p.name }}</td><td>{{ p.brand }}</td><td style="font-weight:700;color:var(--cd)">{{ p.price_min | inr }} – {{ p.price_max | inr }}</td></tr>
+      {% endfor %}
+    </table></div>
+    <p><a href="/prices">← See the complete price list</a></p>
+    {% endif %}
+
+    <div class="card" style="margin-top:30px;background:var(--cl);border:0">
+      <h3>Book a Free Consultation for {{ s.name.split('(')[0] }}</h3>
+      <p style="margin:8px 0 14px">Talk to our clinicians today — phone, WhatsApp or visit the clinic.</p>
+      <a href="/contact" class="btn btn-primary btn-sm">Book Appointment</a>
+      <a href="https://wa.me/{{ settings.whatsapp }}" class="btn btn-outline btn-sm" rel="noopener">WhatsApp Us</a>
+    </div>
+  </div>
+</section>
+{% if journeys %}
+<section class="bg-white">
+  <div class="wrap">
+    <h2 class="center">Patient Journeys in This Service</h2>
+    <div class="grid g2">
+      {% for j in journeys %}
+      <div class="j-card">
+        <div class="ba">
+          <img src="{{ j.before_image }}" alt="Before – {{ j.title }}" loading="lazy">
+          <img src="{{ j.after_image }}" alt="After – {{ j.title }}" loading="lazy">
+        </div>
+        <div class="j-body"><h3><a href="/journey/{{ j.id }}">{{ j.title }}</a></h3><p><a href="/journey/{{ j.id }}">Read story →</a></p></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
