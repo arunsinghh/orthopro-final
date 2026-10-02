@@ -34,14 +34,14 @@
       <div><label>Area / City</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
       <div><label>Lead / Referral Source</label>
         <select name="source">
-          {% for s in (sources if sources is defined and sources else ['Walk-in', 'WhatsApp', 'Doctor Referral', 'Patient Referral', 'Website', 'Other']) %}<option>{{ s }}</option>{% endfor %}
+          {% for s in sources %}<option>{{ s }}</option>{% endfor %}
         </select>
       </div>
       <div class="full"><label>Clinical / Initial Note</label>
         <textarea name="notes" rows="3" placeholder="e.g. Below-knee prosthesis evaluation, accident 6 months ago..." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
       </div>
       <div class="full" style="font-size:.82rem;color:var(--mut);margin-top:6px">
-        💡 Serial number is assigned automatically ({{ today[2:4] if (today is defined and today|length >= 4) else '26' }}{{ today[5:7] if (today is defined and today|length >= 7) else '10' }} + monthly patient index).
+        💡 Serial number is assigned automatically ({{ today[2:4] }}{{ today[5:7] }} + monthly patient index).
       </div>
       <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
         <button type="button" class="btn btn-o" onclick="closeAddPatientModal()">Cancel</button>
@@ -56,35 +56,35 @@
   <!-- Top Category Filter Pills -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
     <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">DIRECTORY:</span>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is not defined or not stage_f) and (due_f is not defined or not due_f) else 'btn-o' }}" href="/admin/patients?q={{ q if q is defined and q else '' }}" style="border-radius:99px;padding:4px 12px">
-      👥 All Patients <span class="badge {{ 'badge-w' if (stage_f is not defined or not stage_f) and (due_f is not defined or not due_f) else '' }}">{{ counts.all if (counts is defined and counts and counts.all is defined) else (rows|length if rows else 0) }}</span>
+    <a class="btn btn-xs {{ 'btn-p' if not stage_f and not due_f else 'btn-o' }}" href="/admin/patients?q={{ q }}" style="border-radius:99px;padding:4px 12px">
+      👥 All Patients <span class="badge {{ 'badge-w' if not stage_f and not due_f else '' }}">{{ counts.all }}</span>
     </a>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is defined and stage_f=='active') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if (stage_f is defined and stage_f=='active') else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}" href="/admin/patients?stage={{ 'all' if (stage_f is defined and stage_f=='active') else 'active' }}&q={{ q if q is defined and q else '' }}">
-      ⚡ Active Pipeline <span class="badge" style="{{ 'background:#fff;color:#0e7490' if (stage_f is defined and stage_f=='active') else 'background:#0e7490;color:#fff' }}">{{ counts.active if (counts is defined and counts and counts.active is defined) else 0 }}</span>
-      {% if stage_f is defined and stage_f=='active' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    <a class="btn btn-xs {{ 'btn-p' if stage_f=='active' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if stage_f=='active' else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}" href="/admin/patients?stage={{ 'all' if stage_f=='active' else 'active' }}&q={{ q }}">
+      ⚡ Active Pipeline <span class="badge" style="{{ 'background:#fff;color:#0e7490' if stage_f=='active' else 'background:#0e7490;color:#fff' }}">{{ counts.active }}</span>
+      {% if stage_f=='active' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
     </a>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is defined and stage_f=='completed') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if (stage_f is defined and stage_f=='completed') else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/patients?stage={{ 'all' if (stage_f is defined and stage_f=='completed') else 'completed' }}&q={{ q if q is defined and q else '' }}">
-      ✅ Completed <span class="badge" style="{{ 'background:#fff;color:#16a34a' if (stage_f is defined and stage_f=='completed') else 'background:#16a34a;color:#fff' }}">{{ counts.completed if (counts is defined and counts and counts.completed is defined) else 0 }}</span>
-      {% if stage_f is defined and stage_f=='completed' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    <a class="btn btn-xs {{ 'btn-p' if stage_f=='completed' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if stage_f=='completed' else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/patients?stage={{ 'all' if stage_f=='completed' else 'completed' }}&q={{ q }}">
+      ✅ Completed <span class="badge" style="{{ 'background:#fff;color:#16a34a' if stage_f=='completed' else 'background:#16a34a;color:#fff' }}">{{ counts.completed }}</span>
+      {% if stage_f=='completed' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
     </a>
-    <a class="btn btn-xs {{ 'btn-p' if (due_f is defined and due_f=='1') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#dc2626;border-color:#dc2626;color:#fff' if (due_f is defined and due_f=='1') else 'color:#b91c1c;border-color:#fecaca;background:#fef2f2' }}" href="/admin/patients?due={{ '0' if (due_f is defined and due_f=='1') else '1' }}&q={{ q if q is defined and q else '' }}">
-      💳 Balance Due <span class="badge" style="{{ 'background:#fff;color:#dc2626' if (due_f is defined and due_f=='1') else 'background:#dc2626;color:#fff' }}">{{ counts.due if (counts is defined and counts and counts.due is defined) else 0 }}</span>
-      {% if due_f is defined and due_f=='1' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    <a class="btn btn-xs {{ 'btn-p' if due_f=='1' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#dc2626;border-color:#dc2626;color:#fff' if due_f=='1' else 'color:#b91c1c;border-color:#fecaca;background:#fef2f2' }}" href="/admin/patients?due={{ '0' if due_f=='1' else '1' }}&q={{ q }}">
+      💳 Balance Due <span class="badge" style="{{ 'background:#fff;color:#dc2626' if due_f=='1' else 'background:#dc2626;color:#fff' }}">{{ counts.due }}</span>
+      {% if due_f=='1' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
     </a>
   </div>
 
   <!-- Search & Stage Filters -->
   <form method="get" action="/admin/patients" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    {% if stage_f is defined and stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
-    {% if due_f is defined and due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
+    {% if stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
+    {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
     <div style="flex:2;min-width:220px">
-      <input type="search" name="q" value="{{ q if q is defined and q else '' }}" placeholder="🔍 Search by serial # (e.g. 26091), patient name, phone, area..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
+      <input type="search" name="q" value="{{ q or '' }}" placeholder="🔍 Search by serial # (e.g. 26091), patient name, phone, area..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
     </div>
     <div style="flex:1;min-width:180px">
       <select name="stage" style="padding:7px 12px;font-size:.88rem;border-radius:8px" onchange="this.form.submit()">
-        <option value="">All Stages ({{ stages|length if stages is defined and stages else 0 }})</option>
-        {% for k, name in (stages.items() if (stages is defined and stages) else []) %}
-        <option value="{{ k }}" {{ 'selected' if (stage_f is defined and stage_f==k) }}>{{ name }}</option>
+        <option value="">All Stages ({{ stages|length }})</option>
+        {% for k, name in stages.items() %}
+        <option value="{{ k }}" {{ 'selected' if stage_f==k }}>{{ name }}</option>
         {% endfor %}
       </select>
     </div>
