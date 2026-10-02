@@ -159,6 +159,9 @@ def create_app(config_name=None):
             "directly. Login and all forms will then work normally.</p>"
             "<p><a href='/admin/login'>Go to the admin login</a></p>"), 400
 
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     return app
 
 

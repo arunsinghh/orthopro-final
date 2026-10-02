@@ -137,7 +137,8 @@ def md(text):
         elif re.match(r"^\d+\. ", s):
             if not in_ol:
                 out.append("<ol>"); in_ol = True
-            out.append(f"<li>{inline(re.sub(r'^[0-9]+\\. ', '', s))}</li>")
+            cleaned = re.sub(r'^[0-9]+\. ', '', s)
+            out.append(f"<li>{inline(cleaned)}</li>")
         elif s.startswith("> "):
             out.append(f"<blockquote><p>{inline(s[2:])}</p></blockquote>")
         else:
