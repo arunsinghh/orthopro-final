@@ -9,7 +9,7 @@
     </p>
   </div>
   <div>
-    <button type="button" onclick="openAddPatientModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
+    <button type="button" id="btn-open-add-patient" data-modal-open="#add-patient-modal" onclick="openAddPatientModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
       <span style="font-size:1.1rem;font-weight:700">➕</span>
       <span>Add Patient</span>
     </button>
@@ -24,7 +24,7 @@
         <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
         Register New Patient
       </h2>
-      <button type="button" onclick="closeAddPatientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
+      <button type="button" data-modal-close="#add-patient-modal" onclick="closeAddPatientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
     </div>
 
     <form method="post" action="/admin/patients/new" class="fgrid">
@@ -44,7 +44,7 @@
         💡 Serial number is assigned automatically ({{ today[2:4] if (today is defined and today|length >= 4) else '26' }}{{ today[5:7] if (today is defined and today|length >= 7) else '10' }} + monthly patient index).
       </div>
       <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button type="button" class="btn btn-o" onclick="closeAddPatientModal()">Cancel</button>
+        <button type="button" class="btn btn-o" data-modal-close="#add-patient-modal" onclick="closeAddPatientModal()">Cancel</button>
         <button type="submit" class="btn btn-p" style="background:#f97316;border-color:#ea580c">+ Register Patient</button>
       </div>
     </form>

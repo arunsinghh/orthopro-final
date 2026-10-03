@@ -61,7 +61,7 @@
         {% if settings.facebook %}<a href="{{ settings.facebook }}" rel="noopener" aria-label="Facebook">Facebook</a> ·{% endif %}
         {% if settings.instagram %}<a href="{{ settings.instagram }}" rel="noopener" aria-label="Instagram">Instagram</a> ·{% endif %}
         {% if settings.youtube %}<a href="{{ settings.youtube }}" rel="noopener" aria-label="YouTube">YouTube</a> ·{% endif %}
-        {% if settings.gmb_url %}<a href="{{ settings.gmb_url }}" rel="noopener" aria-label="Google reviews">Google Reviews</a>{% endif %}
+        {% if settings.gmb_url or settings.google_reviews_url %}<a href="{{ settings.gmb_url or settings.google_reviews_url }}" target="_blank" rel="noopener" aria-label="Google reviews">Google Reviews</a>{% endif %}
       </p>
     </div>
     <div>

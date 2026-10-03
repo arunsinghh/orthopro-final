@@ -120,7 +120,7 @@
 <section id="reviews">
   <div class="wrap">
     <h2 class="center">What Our Patients Say</h2>
-    <p class="sub">{% if rstat.c %}★ {{ "%.1f"|format(rstat.a) }} / 5 average from {{ rstat.c }} patient review{{ 's' if rstat.c != 1 }} · {% endif %}<a href="{{ settings.google_reviews_url }}" rel="noopener">Read our Google Reviews →</a></p>
+    <p class="sub">{% if rstat.c %}★ {{ "%.1f"|format(rstat.a) }} / 5 average from {{ rstat.c }} patient review{{ 's' if rstat.c != 1 }} · {% endif %}<a href="{{ settings.google_reviews_url or settings.gmb_url or 'https://share.google/43Xf7XcTXUTvqFXV2' }}" target="_blank" rel="noopener">Read our Google Reviews →</a></p>
     <div class="grid g3">
       {% for r in reviews %}
       <div class="rev">

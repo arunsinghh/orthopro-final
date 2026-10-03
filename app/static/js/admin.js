@@ -150,3 +150,84 @@
     if (e.key === "Escape") closeDrawer();
   });
 })();
+
+// 7. General Modal Controller (Add Lead, Add Patient, etc.)
+(function () {
+  function openModal(modal) {
+    if (typeof modal === "string") modal = document.querySelector(modal);
+    if (!modal) return;
+    modal.style.display = "flex";
+    var first = modal.querySelector("input:not([type=hidden]), select, textarea");
+    if (first) setTimeout(function () { first.focus(); }, 80);
+  }
+
+  function closeModal(modal) {
+    if (typeof modal === "string") modal = document.querySelector(modal);
+    if (!modal) return;
+    modal.style.display = "none";
+  }
+
+  // Open triggers via delegation
+  document.addEventListener("click", function (e) {
+    var openBtn = e.target.closest("[data-modal-open]");
+    if (openBtn) {
+      e.preventDefault();
+      var target = openBtn.getAttribute("data-modal-open");
+      openModal(target);
+      return;
+    }
+    // Specific IDs and button text fallbacks
+    var btn = e.target.closest("button, a");
+    if (btn) {
+      var txt = (btn.textContent || "").trim();
+      if (btn.id === "btn-open-add-lead" || txt.indexOf("Add Lead") !== -1) {
+        var ml = document.getElementById("add-lead-modal");
+        if (ml) { e.preventDefault(); openModal(ml); return; }
+      }
+      if (btn.id === "btn-open-add-patient" || txt.indexOf("Add Patient") !== -1 || txt.indexOf("Register Patient") !== -1) {
+        var mp = document.getElementById("add-patient-modal");
+        if (mp) { e.preventDefault(); openModal(mp); return; }
+      }
+    }
+
+    // Close triggers
+    var closeBtn = e.target.closest("[data-modal-close]");
+    if (closeBtn) {
+      e.preventDefault();
+      var target = closeBtn.getAttribute("data-modal-close");
+      if (target) closeModal(target);
+      else {
+        var parentModal = closeBtn.closest("#add-lead-modal, #add-patient-modal");
+        if (parentModal) closeModal(parentModal);
+      }
+      return;
+    }
+
+    // Backdrop click
+    if (e.target && (e.target.id === "add-lead-modal" || e.target.id === "add-patient-modal")) {
+      closeModal(e.target);
+    }
+  });
+
+  // Escape key closes modals
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      document.querySelectorAll("#add-lead-modal, #add-patient-modal").forEach(function (m) {
+        m.style.display = "none";
+      });
+    }
+  });
+
+  // Global functions for window scope
+  window.openAddLeadModal = function () { openModal("#add-lead-modal"); };
+  window.closeAddLeadModal = function () { closeModal("#add-lead-modal"); };
+  window.openAddPatientModal = function () { openModal("#add-patient-modal"); };
+  window.closeAddPatientModal = function () { closeModal("#add-patient-modal"); };
+
+  // URL query parameter trigger (?add=1 or ?add=true)
+  if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
+    if (document.getElementById("add-lead-modal")) openModal("#add-lead-modal");
+    if (document.getElementById("add-patient-modal")) openModal("#add-patient-modal");
+  }
+})();
+

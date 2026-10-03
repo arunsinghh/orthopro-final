@@ -32,8 +32,11 @@ if [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         "${APP_DIR}/.venv/bin/pip" install -q -r "${APP_DIR}/requirements.txt" || true
     fi
 
-    # Run database schema migrations
+    # Run database schema migrations & reference data seeding
     "${APP_DIR}/.venv/bin/python" "${APP_DIR}/scripts/init_db.py" || true
+    "${APP_DIR}/.venv/bin/python" "${APP_DIR}/scripts/seed_dev.py" || true
+    "${APP_DIR}/.venv/bin/python" "${APP_DIR}/scripts/seed_gallery.py" || true
+    "${APP_DIR}/.venv/bin/python" "${APP_DIR}/scripts/update_settings.py" || true
 
     # Reload Gunicorn service
     sudo systemctl restart orthopro

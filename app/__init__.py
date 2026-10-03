@@ -57,9 +57,12 @@ def create_app(config_name=None):
         return dict(
             site={"name": "OrthoPro Artificial Limbs Center",
                   "tagline": "Advanced Prosthetic & Orthotic Rehabilitation Center"},
-            settings={k: helpers.setting(k) for k in (
+            settings=(lambda s: s.update({
+                "google_reviews_url": s.get("google_reviews_url") or s.get("gmb_url") or "https://share.google/43Xf7XcTXUTvqFXV2",
+                "gmb_url": s.get("gmb_url") or s.get("google_reviews_url") or "https://share.google/43Xf7XcTXUTvqFXV2"
+            }) or s)({k: helpers.setting(k) for k in (
                 "phone", "phone2", "whatsapp", "email", "address", "hours",
-                "map_url", "gmb_url", "facebook", "instagram", "youtube")},
+                "map_url", "gmb_url", "google_reviews_url", "facebook", "instagram", "youtube")}),
             notif_count=helpers.due_followups_count(),
             appt_count=helpers.new_appointments_count(),
             today=helpers.today(),

@@ -47,7 +47,7 @@
       <div class="card" style="margin-top:18px">
         <h3>⭐ Read Our Reviews</h3>
         <p>See what 200+ patients say about us on Google.</p>
-        <p style="margin-top:8px"><a href="{{ settings.gmb_url }}" class="btn btn-outline btn-sm" rel="noopener">Google Reviews</a></p>
+        <p style="margin-top:8px"><a href="{{ settings.gmb_url or settings.google_reviews_url or 'https://share.google/43Xf7XcTXUTvqFXV2' }}" target="_blank" class="btn btn-outline btn-sm" rel="noopener">Google Reviews ↗</a></p>
       </div>
     </div>
   </div>
