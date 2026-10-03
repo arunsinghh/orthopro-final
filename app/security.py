@@ -205,9 +205,9 @@ def apply_security_headers(response):
         h["X-Frame-Options"] = "SAMEORIGIN"
         h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         h["Content-Security-Policy"] = (
-            "default-src 'self'; img-src 'self' data: https:; media-src 'self'; "
+            "default-src 'self'; img-src 'self' data:; media-src 'self'; "
             "frame-src https://www.youtube.com; style-src 'self' 'unsafe-inline'; "
-            "script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'"
+            "script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
         )
     return response
 
