@@ -365,7 +365,7 @@ def leads():
 @bp.route("/leads/new", methods=["POST"])
 @login_required
 def lead_new():
-    if not has_cap("leads_edit"):
+    if not (has_cap("leads") or has_cap("leads_edit") or current_role() == "super_admin"):
         abort(403)
     f = request.form
     name = f.get("name", "").strip()
@@ -391,6 +391,8 @@ def lead_new():
     interest = (f.get("interest") or "").strip() or h.detect_lead_type(notes)
     assign_val = f.get("assigned_to", "").strip()
     assigned_to = int(assign_val) if assign_val.isdigit() else None
+    if not assigned_to and session.get("admin_role") != "super_admin":
+        assigned_to = session.get("admin_uid")
     lid = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest, notes, assigned_to, created_at)
         VALUES (?,?,?,?, ?, ?, ?, ?) RETURNING id""",
         (pid, f.get("source", "") or "Walk-in", "", "new", interest, notes, assigned_to, h.now()))[0]["id"]
@@ -848,7 +850,7 @@ def settings():
 
 # ------------------------------------------------------------------ staff & assignment
 STAFF_CAP_OPTIONS = [
-    ("leads", "See assigned leads (My Leads)"),
+    ("leads", "See assigned leads & add new leads"),
     ("leads_edit", "Update lead outcomes & notes"),
     ("patients", "See patients"),
     ("followups", "Manage follow-ups"),

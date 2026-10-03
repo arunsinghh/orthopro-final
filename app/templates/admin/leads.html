@@ -13,9 +13,9 @@
       Real-time pipeline: manage and respond to incoming leads from <b>💬 WhatsApp Webhook</b> and <b>📋 Manual &amp; Website Appointments</b>.
     </p>
   </div>
-  {% if current_role == 'super_admin' %}
+  {% if can('leads') or can('leads_edit') or current_role == 'super_admin' %}
   <div>
-    <button type="button" onclick="openAddLeadModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
+    <button type="button" id="btn-open-add-lead" data-modal-open="#add-lead-modal" onclick="openAddLeadModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
       <span style="font-size:1.1rem;font-weight:700">➕</span>
       <span>Add Lead</span>
     </button>
@@ -24,7 +24,7 @@
 </div>
 
 <!-- Add Lead Modal Overlay -->
-{% if current_role == 'super_admin' %}
+{% if can('leads') or can('leads_edit') or current_role == 'super_admin' %}
 <div id="add-lead-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
   <div class="card" style="width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
@@ -32,7 +32,7 @@
         <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
         Add New Lead
       </h2>
-      <button type="button" onclick="closeAddLeadModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
+      <button type="button" data-modal-close="#add-lead-modal" onclick="closeAddLeadModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
     </div>
 
     <form method="post" action="/admin/leads/new" class="fgrid">
@@ -64,7 +64,7 @@
         <textarea name="notes" rows="3" placeholder="e.g. Needs above-knee prosthesis after road accident. Wants consultation on Saturday." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
       </div>
       <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button type="button" class="btn btn-o" onclick="closeAddLeadModal()">Cancel</button>
+        <button type="button" class="btn btn-o" data-modal-close="#add-lead-modal" onclick="closeAddLeadModal()">Cancel</button>
         <button type="submit" class="btn btn-p" style="background:#f97316;border-color:#ea580c">+ Save &amp; Add Lead</button>
       </div>
     </form>

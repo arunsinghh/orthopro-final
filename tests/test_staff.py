@@ -166,3 +166,33 @@ def test_leads_sections_whatsapp_and_manual(app, admin_client):
     assert f'value="{wa_lead_id}"'.encode() in rv_all.data
     assert f'value="{man_lead_id}"'.encode() in rv_all.data
 
+
+def test_staff_with_leads_cap_can_add_lead(app, client):
+    s = _make_staff("staff_lead_creator", caps="leads")
+    assert _login(client, "staff_lead_creator").status_code in (302, 303)
+
+    # Check that Add Lead button & modal appear on page
+    rv = client.get("/admin/leads")
+    assert rv.status_code == 200
+    assert b"Add Lead" in rv.data
+    assert b"add-lead-modal" in rv.data
+
+    # Post new lead
+    rv_post = client.post("/admin/leads/new", data={
+        "name": "Staff Created Patient",
+        "phone": "9911223344",
+        "notes": "Added directly by staff",
+        "area": "Noida",
+    }, follow_redirects=True)
+    assert rv_post.status_code == 200
+
+    # Verify lead was created in DB and auto-assigned to this staff member
+    lead = dblib.q("SELECT * FROM leads WHERE notes='Added directly by staff'", one=True)
+    assert lead is not None
+    assert lead["assigned_to"] == s
+
+    # Verify staff member can see their new lead
+    rv_check = client.get("/admin/leads")
+    assert b"Staff Created Patient" in rv_check.data
+    assert b"Added directly by staff" in rv_check.data
+
