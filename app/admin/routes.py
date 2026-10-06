@@ -59,6 +59,8 @@ def _platform_badge(lead):
         return "📘 Facebook"
     if plat == "instagram" or "instagram" in src:
         return "📷 Instagram"
+    if plat == "website" or "website" in src:
+        return "🌐 Website Consultation"
     raw_src = lead.get("source") or ""
     if raw_src:
         return f"🧑 {raw_src}"

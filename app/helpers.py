@@ -19,9 +19,19 @@ def today():
     return dt.date.today().isoformat()
 
 
+_SETTING_DEFAULTS = {
+    "phone": "+91 81305 46090",
+    "whatsapp": "918130546090",
+    "email": "info@orthoproindia.com",
+    "domain": "https://www.orthoproindia.com",
+}
+
+
 def setting(key, default=""):
     r = db.q("SELECT value FROM settings WHERE key=?", (key,), one=True)
-    return r["value"] if r else default
+    if r and r.get("value"):
+        return r["value"]
+    return _SETTING_DEFAULTS.get(key, default)
 
 
 def due_followups_count():

@@ -3,8 +3,9 @@
 {% block content %}
 <div class="topbar"><h1>🏠 Dashboard</h1>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="/admin/leads" class="btn btn-p">📞 New Lead</a>
-    <a href="/admin/patients" class="btn btn-o">👥 Patients</a>
+    <a href="/admin/leads?add=1" class="btn btn-p">📞 + New Lead</a>
+    <a href="/admin/patients?add=1" class="btn btn-p" style="background:#f97316;border-color:#ea580c">👥 + New Patient</a>
+    <a href="/admin/patients" class="btn btn-o">👥 All Patients</a>
   </div>
 </div>
 

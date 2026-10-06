@@ -207,7 +207,7 @@ def apply_security_headers(response):
         h["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; media-src 'self'; "
             "frame-src https://www.youtube.com; style-src 'self' 'unsafe-inline'; "
-            "script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+            "script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'"
         )
     return response
 

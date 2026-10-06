@@ -19,7 +19,7 @@
       <h3>Still Have a Question?</h3>
       <p style="margin:8px 0 14px">Our clinicians answer every call personally.</p>
       <a href="tel:{{ settings.phone.replace(' ','') }}" class="btn btn-primary btn-sm">📞 {{ settings.phone }}</a>
-      <a href="https://wa.me/{{ settings.whatsapp }}" class="btn btn-outline btn-sm" rel="noopener">WhatsApp</a>
+      <a href="https://wa.me/{{ settings.whatsapp or '918130546090' }}?text=Hello%20OrthoPro%20India%2C%20I%20have%20a%20question" class="btn btn-outline btn-sm" target="_blank" rel="noopener">💬 WhatsApp</a>
     </div>
   </div>
 </section>

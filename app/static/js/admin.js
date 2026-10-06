@@ -150,3 +150,71 @@
     if (e.key === "Escape") closeDrawer();
   });
 })();
+
+// 7. Modals: Add Lead & Add Patient Controller
+(function () {
+  function openModal(id) {
+    var modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = "flex";
+      var first = modal.querySelector("input[name='name']");
+      if (first) {
+        setTimeout(function () { first.focus(); }, 60);
+      }
+    }
+  }
+
+  function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = "none";
+    }
+  }
+
+  window.openAddLeadModal = function () { openModal("add-lead-modal"); };
+  window.closeAddLeadModal = function () { closeModal("add-lead-modal"); };
+  window.openAddPatientModal = function () { openModal("add-patient-modal"); };
+  window.closeAddPatientModal = function () { closeModal("add-patient-modal"); };
+
+  document.addEventListener("click", function (e) {
+    var openBtn = e.target.closest("[data-open-modal]");
+    if (openBtn) {
+      e.preventDefault();
+      openModal(openBtn.getAttribute("data-open-modal"));
+      return;
+    }
+
+    var closeBtn = e.target.closest("[data-close-modal]");
+    if (closeBtn) {
+      e.preventDefault();
+      closeModal(closeBtn.getAttribute("data-close-modal"));
+      return;
+    }
+
+    if (e.target && (e.target.id === "add-lead-modal" || e.target.id === "add-patient-modal")) {
+      e.target.style.display = "none";
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeModal("add-lead-modal");
+      closeModal("add-patient-modal");
+    }
+  });
+
+  // Automatically open modal if ?add=1 or ?add=true is in the query params
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
+      if (document.getElementById("add-lead-modal")) openModal("add-lead-modal");
+      if (document.getElementById("add-patient-modal")) openModal("add-patient-modal");
+    }
+  });
+  if (document.readyState !== "loading") {
+    if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
+      if (document.getElementById("add-lead-modal")) openModal("add-lead-modal");
+      if (document.getElementById("add-patient-modal")) openModal("add-patient-modal");
+    }
+  }
+})();
+

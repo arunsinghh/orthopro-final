@@ -1,9 +1,11 @@
 """Public website routes. URLs, titles, meta and structured data are
 deliberately unchanged from the original site to preserve SEO."""
+import json
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from .. import db
 from .. import helpers as h
+from ..audit import record
 
 bp = Blueprint("public", __name__)
 
@@ -256,12 +258,61 @@ def contact():
         if not name or not phone:
             flash("Please enter your name and phone number.", "err")
         else:
+            email = request.form.get("email", "").strip()
+            area = request.form.get("area", "").strip()
+            service = request.form.get("service", "").strip()
+            preferred_date = request.form.get("preferred_date") or None
+            message = request.form.get("message", "").strip()
+
+            # 1. Maintain appointment table row
             db.q("""INSERT INTO appointments (name, phone, email, area, service, preferred_date,
                  message, status, created_at) VALUES (?,?,?,?,?,?,?, 'new', ?)""",
-                 (name, phone, request.form.get("email", ""), request.form.get("area", ""),
-                  request.form.get("service", ""),
-                  (request.form.get("preferred_date") or None),
-                  request.form.get("message", ""), h.now()))
+                 (name, phone, email, area, service, preferred_date, message, h.now()))
+
+            # 2. Find or create Master Patient (preventing duplicates)
+            pid = None
+            if phone:
+                norm = phone.replace(" ", "").replace("+", "").replace("-", "").strip()
+                p = db.q("""SELECT id FROM patients
+                    WHERE REPLACE(REPLACE(REPLACE(phone,' ',''),'+',''),'-','')=?""", (norm,), one=True)
+                pid = p["id"] if p else None
+            if not pid:
+                serial = h.next_serial_no()
+                p_rows = db.q("""INSERT INTO patients (name, phone, email, area, source, status,
+                    profile_status, patient_code, serial_no, pipeline_stage, created_at)
+                    VALUES (?,?,?,?, 'Website Consultation', 'active', 'complete', ?, ?, '', ?) RETURNING id""",
+                    (name, phone, email, area, h.next_patient_code(), serial, h.now()))
+                pid = p_rows[0]["id"] if p_rows else None
+
+            # 3. Create Lead in leads table so it immediately appears in Admin Leads
+            interest = service or h.detect_lead_type(message)
+            note_parts = []
+            if service:
+                note_parts.append(f"Service: {service}")
+            if preferred_date:
+                note_parts.append(f"Preferred Date: {preferred_date}")
+            if area:
+                note_parts.append(f"Area: {area}")
+            if message:
+                note_parts.append(f"Message: {message}")
+            notes = " | ".join(note_parts) or "Website consultation booking request"
+
+            lead_fields = json.dumps({
+                "service": service,
+                "preferred_date": str(preferred_date or ""),
+                "message": message,
+                "email": email,
+                "area": area,
+            })
+
+            lead_rows = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest,
+                notes, lead_fields, created_at)
+                VALUES (?,?,?,?, ?, ?, ?, ?) RETURNING id""",
+                (pid, "Website Consultation", "website", "new", interest, notes, lead_fields, h.now()))
+            if lead_rows:
+                record("lead_create", f"id={lead_rows[0]['id']} source=website_booking",
+                       entity_type="lead", entity_id=lead_rows[0]["id"])
+
             flash("Thank you! Your appointment request has been received. "
                   "Our team will call you shortly to confirm.", "ok")
             return redirect(url_for("public.contact"))
@@ -288,3 +339,11 @@ def submit_review():
              (name[:120], rating, text[:2000]))
         flash("Thank you! Your review will appear once approved.", "ok")
     return redirect(url_for("public.home") + "#reviews")
+
+
+@bp.route("/whatsapp")
+def whatsapp():
+    wa = (h.setting("whatsapp", "918130546090") or "918130546090").replace("+", "").replace(" ", "").replace("-", "")
+    text = request.args.get("text", "Hello OrthoPro India, I want to book a free consultation")
+    from urllib.parse import quote
+    return redirect(f"https://wa.me/{wa}?text={quote(text)}")

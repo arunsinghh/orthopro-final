@@ -58,6 +58,8 @@ def create_app(config_name=None):
             site={"name": "OrthoPro Artificial Limbs Center",
                   "tagline": "Advanced Prosthetic & Orthotic Rehabilitation Center"},
             settings=(lambda s: s.update({
+                "whatsapp": s.get("whatsapp") or "918130546090",
+                "phone": s.get("phone") or "+91 81305 46090",
                 "google_reviews_url": s.get("google_reviews_url") or s.get("gmb_url") or "https://share.google/43Xf7XcTXUTvqFXV2",
                 "gmb_url": s.get("gmb_url") or s.get("google_reviews_url") or "https://share.google/43Xf7XcTXUTvqFXV2"
             }) or s)({k: helpers.setting(k) for k in (

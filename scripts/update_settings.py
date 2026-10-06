@@ -15,7 +15,9 @@ def main():
     url = "https://share.google/43Xf7XcTXUTvqFXV2"
     db.q("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ("gmb_url", url))
     db.q("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ("google_reviews_url", url))
-    print("Settings updated successfully with Google reviews URL!")
+    db.q("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ("whatsapp", "918130546090"))
+    db.q("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ("phone", "+91 81305 46090"))
+    print("Settings updated successfully with WhatsApp and phone numbers!")
 
 if __name__ == "__main__":
     main()

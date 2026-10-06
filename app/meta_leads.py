@@ -199,6 +199,33 @@ def ingest(event: dict):
         record("patient_create", f"id={patient_id} via_meta={platform}",
                entity_type="patient", entity_id=patient_id)
 
+    if platform == "whatsapp":
+        # Deduplication: reuse the person's existing WhatsApp lead if one exists
+        candidate_pids = []
+        if patient_id:
+            candidate_pids.append(patient_id)
+        if matches:
+            for m in matches:
+                if m.get("id") and m["id"] not in candidate_pids:
+                    candidate_pids.append(m["id"])
+        if not candidate_pids and phone:
+            for m in h.find_patient_matches(phone=phone, whatsapp=phone):
+                if m.get("id") and m["id"] not in candidate_pids:
+                    candidate_pids.append(m["id"])
+
+        if candidate_pids:
+            placeholders = ",".join("?" * len(candidate_pids))
+            existing_wa_lead = db.q(
+                f"""SELECT id FROM leads
+                WHERE patient_id IN ({placeholders})
+                  AND (platform='whatsapp' OR LOWER(source)='whatsapp')
+                ORDER BY id ASC LIMIT 1""",
+                tuple(candidate_pids), one=True)
+            if existing_wa_lead:
+                log.info("existing whatsapp lead found id=%s for patient_id in %s",
+                         existing_wa_lead["id"], candidate_pids)
+                return existing_wa_lead["id"], False
+
     rows = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest,
         notes, meta_lead_id, form_id, campaign_id, adset_id, ad_id, lead_fields,
         raw_event, created_at)

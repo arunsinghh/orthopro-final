@@ -34,7 +34,7 @@
       <div class="card">
         <h3>📞 Contact Details</h3>
         <p><b>Phone:</b> <a href="tel:{{ settings.phone.replace(' ','') }}">{{ settings.phone }}</a></p>
-        <p><b>WhatsApp:</b> <a href="https://wa.me/{{ settings.whatsapp }}" rel="noopener">Chat with us</a></p>
+        <p><b>WhatsApp:</b> <a href="https://wa.me/{{ settings.whatsapp or '918130546090' }}?text=Hello%20OrthoPro%20India%2C%20I%20want%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener">+91 81305 46090 (Chat with us)</a></p>
         <p><b>Email:</b> {{ settings.email }}</p>
         <p><b>Address:</b> {{ settings.address }}</p>
         <p><b>Timings:</b> {{ settings.hours }}</p>
