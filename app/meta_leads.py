@@ -190,11 +190,11 @@ def ingest(event: dict):
     if matches:
         patient_id = matches[0]["id"]
     elif phone or name != "Unnamed lead":
-        rows = db.q("""INSERT INTO patients (name, phone, source, status,
-            profile_status, patient_code, serial_no, pipeline_stage, created_at)
-            VALUES (?,?,?,?, 'complete', ?, ?, '', ?) RETURNING id""",
-            (name, phone, label, "active", h.next_patient_code(), h.next_serial_no(),
-             h.now()))
+        rows = db.q("""INSERT INTO patients (name, phone, whatsapp, source, status,
+            profile_status, patient_code, serial_no, pipeline_stage, is_confirmed, created_at)
+            VALUES (?,?,?,?, 'lead', 'incomplete', ?, ?, '', 0, ?) RETURNING id""",
+            (name, phone, phone if platform == "whatsapp" else "", label,
+             h.next_patient_code(), h.next_serial_no(), h.now()))
         patient_id = rows[0]["id"]
         record("patient_create", f"id={patient_id} via_meta={platform}",
                entity_type="patient", entity_id=patient_id)
@@ -226,13 +226,14 @@ def ingest(event: dict):
                          existing_wa_lead["id"], candidate_pids)
                 return existing_wa_lead["id"], False
 
-    rows = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest,
+    msg_body = event["fields"].get("message", "") if platform == "whatsapp" else ""
+    rows = db.q("""INSERT INTO leads (patient_id, name, phone, whatsapp, source, platform, status, interest,
         notes, meta_lead_id, form_id, campaign_id, adset_id, ad_id, lead_fields,
         raw_event, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, ?) RETURNING id""",
-        (patient_id, label, platform, "new",
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?) RETURNING id""",
+        (patient_id, name, phone, phone if platform == "whatsapp" else "", label, platform, "new",
          _lead_interest(event, platform),
-         event["fields"].get("message", "") if platform == "whatsapp" else "",
+         msg_body,
          external_id,
          event["attribution"].get("form_id", ""),
          event["attribution"].get("campaign_id", ""),
@@ -242,6 +243,12 @@ def ingest(event: dict):
          json.dumps(event.get("raw") or {}, ensure_ascii=False)[:8000],
          h.now()))
     lead_id = rows[0]["id"]
+    if msg_body or platform:
+        db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, logged_by, interaction_at, created_at)
+            VALUES (?, 'new', ?, ?, ?, NULL, ?, ?)""",
+            (lead_id, msg_body or f"Inbound lead via {label}",
+             msg_body or f"Inbound lead via {label}",
+             "whatsapp" if platform == "whatsapp" else "other", h.now(), h.now()))
     record("lead_create", f"id={lead_id} platform={platform}",
            entity_type="lead", entity_id=lead_id)
 

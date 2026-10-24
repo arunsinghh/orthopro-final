@@ -74,7 +74,7 @@ def _platform_badge(lead):
 def dashboard():
     today = h.today()
     stats = {
-        "patients": db.q("SELECT COUNT(*) c FROM patients", one=True)["c"],
+        "patients": db.q("SELECT COUNT(*) c FROM patients WHERE is_confirmed=1 AND status<>'lead'", one=True)["c"],
         "new_leads": db.q("SELECT COUNT(*) c FROM leads WHERE status='new'", one=True)["c"],
         "fu_today": db.q("SELECT COUNT(*) c FROM followups WHERE status='pending' "
                          "AND due_date<=?", (today,), one=True)["c"],
@@ -114,12 +114,13 @@ def patients():
         phone_like = f"%{q.replace(' ', '').replace('+', '')}%"
         rows = db.q("""SELECT id, serial_no, name, phone, area, notes, pipeline_stage,
                 total_amount, advance_amount, created_at FROM patients
-            WHERE serial_no LIKE ? OR REPLACE(REPLACE(phone,' ',''),'+','') LIKE ?
-                OR name LIKE ?
+            WHERE is_confirmed=1 AND status<>'lead'
+                AND (serial_no LIKE ? OR REPLACE(REPLACE(phone,' ',''),'+','') LIKE ? OR name LIKE ?)
             ORDER BY id DESC""", (like, phone_like, like))
     else:
         rows = db.q("""SELECT id, serial_no, name, phone, area, notes, pipeline_stage,
-                total_amount, advance_amount, created_at FROM patients ORDER BY id DESC""")
+                total_amount, advance_amount, created_at FROM patients
+            WHERE is_confirmed=1 AND status<>'lead' ORDER BY id DESC""")
     return render_template("admin/patients.html", rows=rows, q=q,
                            stages=PIPELINE_LABELS, section="patients")
 
@@ -145,7 +146,7 @@ def patient_new():
     serial = h.next_serial_no()
     rows = db.q("""INSERT INTO patients (name, phone, area, notes, source, status,
         profile_status, patient_code, serial_no, pipeline_stage, stage_updated_at,
-        created_at) VALUES (?,?,?,?,?, 'active', 'complete', ?, ?, 'consultation', ?, ?)
+        is_confirmed, created_at) VALUES (?,?,?,?,?, 'active', 'complete', ?, ?, 'consultation', ?, 1, ?)
         RETURNING id""",
         (name, phone, f.get("area", "").strip(), f.get("notes", "").strip(),
          f.get("source", "") or "Walk-in", h.next_patient_code(), serial, h.now(), h.now()))
@@ -170,13 +171,19 @@ def patient_detail(pid):
     fups = db.q("""SELECT * FROM followups WHERE patient_id=?
         ORDER BY (status='pending') DESC, due_date DESC, id DESC LIMIT 30""", (pid,))
     leads = db.q("""SELECT * FROM leads WHERE patient_id=? ORDER BY id DESC""", (pid,))
+    interactions = db.q("""SELECT lh.*, l.source lead_source, u.full_name staff_name, u.username staff_user
+        FROM lead_history lh
+        JOIN leads l ON l.id=lh.lead_id
+        LEFT JOIN users u ON u.id=lh.logged_by
+        WHERE l.patient_id=?
+        ORDER BY COALESCE(lh.interaction_at, lh.created_at) DESC, lh.id DESC""", (pid,))
     balance = float(p["total_amount"] or 0) - float(p["advance_amount"] or 0)
     try:
         current_idx = PIPELINE_STAGES.index(p["pipeline_stage"])
     except ValueError:
         current_idx = -1
     return render_template("admin/patient_detail.html", p=p, history=history, fups=fups,
-                           leads=leads, balance=balance, stages=PIPELINE_STAGES,
+                           leads=leads, interactions=interactions, balance=balance, stages=PIPELINE_STAGES,
                            labels=PIPELINE_LABELS, current_idx=current_idx,
                            next_stage=_next_stage(p["pipeline_stage"]), section="patients")
 
@@ -268,7 +275,7 @@ def patient_delete(pid):
 def leads():
     if not has_cap("leads"):
         abort(403)
-    view = request.args.get("view", "all")
+    view = request.args.get("view", "all").strip().lower()
     staff_filter = request.args.get("staff", "")
     type_f = request.args.get("t", "")
     src_f = request.args.get("src", "").strip()
@@ -279,21 +286,33 @@ def leads():
     scoped_uid = None if security.current_role() == "super_admin" \
         else session["admin_uid"]
     base = """SELECT l.id, l.status, l.source, l.platform, l.interest, l.notes, l.created_at,
-        l.assigned_to, su.username assigned_name, su.full_name assigned_full_name,
-        p.id pid, p.name pname, p.phone pphone, p.serial_no, p.pipeline_stage, p.area,
+        l.assigned_to, l.next_followup, l.converted_at,
+        COALESCE(NULLIF(l.name, ''), p.name, '') pname,
+        COALESCE(NULLIF(l.phone, ''), p.phone, '') pphone,
+        COALESCE(NULLIF(l.whatsapp, ''), p.whatsapp, '') pwhatsapp,
+        COALESCE(NULLIF(l.email, ''), p.email, '') pemail,
+        COALESCE(NULLIF(l.area, ''), p.area, '') area,
+        su.username assigned_name, su.full_name assigned_full_name,
+        p.id pid, p.serial_no, p.pipeline_stage, p.is_confirmed,
         (SELECT note FROM lead_history WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) last_note,
+        (SELECT summary FROM lead_history WHERE lead_id=l.id AND summary<>'' ORDER BY id DESC LIMIT 1) last_summary,
         (SELECT outcome FROM lead_history WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) last_outcome,
-        (SELECT due_date FROM lead_history WHERE lead_id=l.id AND due_date IS NOT NULL ORDER BY id DESC LIMIT 1) last_due_date,
+        (SELECT interaction_type FROM lead_history WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) last_interaction_type,
+        (SELECT interaction_at FROM lead_history WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) last_contact_at,
+        COALESCE(l.next_followup, (SELECT due_date FROM lead_history WHERE lead_id=l.id AND due_date IS NOT NULL ORDER BY id DESC LIMIT 1)) last_due_date,
         (SELECT COUNT(*) FROM lead_history WHERE lead_id=l.id) history_count
         FROM leads l LEFT JOIN patients p ON p.id=l.patient_id
         LEFT JOIN users su ON su.id=l.assigned_to"""
     filters = {
         "all": " WHERE 1=1",
         "new": " WHERE l.status='new'",
-        "followup": " WHERE l.status='followup'",
+        "contacted": " WHERE l.status='contacted'",
+        "followup": " WHERE (l.status='followup' OR (l.next_followup IS NOT NULL AND l.next_followup <= CURRENT_DATE AND l.status NOT IN ('converted','lost')))",
+        "appointment": " WHERE l.status IN ('appointment','appointment_scheduled')",
+        "assessment": " WHERE l.status='assessment'",
+        "converted": " WHERE l.status='converted'",
         "hold": " WHERE l.status='hold'",
-        "lost": " WHERE l.status='lost'",
-        "appointment": " WHERE l.status='appointment'",
+        "lost": " WHERE l.status IN ('lost','not_interested')",
     }
     where = filters.get(view, filters["all"])
     args = []
@@ -317,7 +336,10 @@ def leads():
         where += " AND l.assigned_to=?"
         args.append(int(staff_filter))
     if q:
-        where += " AND (p.name ILIKE ? OR p.phone ILIKE ? OR CAST(p.serial_no AS TEXT) ILIKE ? OR l.notes ILIKE ?)"
+        where += """ AND (COALESCE(NULLIF(l.name, ''), p.name, '') ILIKE ?
+            OR COALESCE(NULLIF(l.phone, ''), p.phone, '') ILIKE ?
+            OR CAST(p.serial_no AS TEXT) ILIKE ?
+            OR l.notes ILIKE ?)"""
         like = f"%{q}%"
         args.extend([like, like, like, like])
     sql = base + where + " ORDER BY l.id DESC LIMIT 300"
@@ -328,17 +350,23 @@ def leads():
     c_res = db.q(f"""SELECT
         COUNT(*) AS c_all,
         COUNT(*) FILTER (WHERE status='new') AS c_new,
-        COUNT(*) FILTER (WHERE status='followup') AS c_followup,
-        COUNT(*) FILTER (WHERE status='appointment') AS c_appointment,
+        COUNT(*) FILTER (WHERE status='contacted') AS c_contacted,
+        COUNT(*) FILTER (WHERE status='followup' OR (next_followup IS NOT NULL AND next_followup <= CURRENT_DATE AND status NOT IN ('converted','lost'))) AS c_followup,
+        COUNT(*) FILTER (WHERE status IN ('appointment','appointment_scheduled')) AS c_appointment,
+        COUNT(*) FILTER (WHERE status='assessment') AS c_assessment,
+        COUNT(*) FILTER (WHERE status='converted') AS c_converted,
         COUNT(*) FILTER (WHERE status='hold') AS c_hold,
-        COUNT(*) FILTER (WHERE status='lost') AS c_lost,
+        COUNT(*) FILTER (WHERE status IN ('lost','not_interested')) AS c_lost,
         COUNT(*) FILTER (WHERE platform='whatsapp' OR source ILIKE '%whatsapp%') AS c_whatsapp
         FROM leads{c_where}""", tuple(cargs), one=True)
     counts = {
         "all": c_res["c_all"] if c_res else 0,
         "new": c_res["c_new"] if c_res else 0,
+        "contacted": c_res["c_contacted"] if c_res else 0,
         "followup": c_res["c_followup"] if c_res else 0,
         "appointment": c_res["c_appointment"] if c_res else 0,
+        "assessment": c_res["c_assessment"] if c_res else 0,
+        "converted": c_res["c_converted"] if c_res else 0,
         "hold": c_res["c_hold"] if c_res else 0,
         "lost": c_res["c_lost"] if c_res else 0,
         "whatsapp": c_res["c_whatsapp"] if c_res else 0,
@@ -375,31 +403,301 @@ def lead_new():
         flash("Name is required.", "err")
         return redirect(url_for("admin.leads"))
     phone = f.get("phone", "").strip()
-    # existing patient by phone? link the lead to them — never duplicate people
-    pid = None
-    if phone:
-        norm = phone.replace(" ", "").replace("+", "").replace("-", "").strip()
-        p = db.q("""SELECT id FROM patients
-            WHERE REPLACE(REPLACE(REPLACE(phone,' ',''),'+',''),'-','')=?""", (norm,), one=True)
-        pid = p["id"] if p else None
-    if not pid:
-        serial = h.next_serial_no()
-        pid = db.q("""INSERT INTO patients (name, phone, area, source, status,
-            profile_status, patient_code, serial_no, pipeline_stage, created_at)
-            VALUES (?,?,?,?, 'active', 'complete', ?, ?, '', ?) RETURNING id""",
-            (name, phone, f.get("area", "").strip(), f.get("source", "") or "Walk-in",
-             h.next_patient_code(), serial, h.now()))[0]["id"]
+    whatsapp = f.get("whatsapp", "").strip() or phone
+    email = f.get("email", "").strip()
+    area = f.get("area", "").strip()
+    source = f.get("source", "").strip() or "Walk-in"
     notes = f.get("notes", "").strip()
     interest = (f.get("interest") or "").strip() or h.detect_lead_type(notes)
     assign_val = f.get("assigned_to", "").strip()
     assigned_to = int(assign_val) if assign_val.isdigit() else None
-    lid = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest, notes, assigned_to, created_at)
-        VALUES (?,?,?,?, ?, ?, ?, ?) RETURNING id""",
-        (pid, f.get("source", "") or "Walk-in", "", "new", interest, notes, assigned_to, h.now()))[0]["id"]
-    record("lead_create", f"id={lid} source={f.get('source','')}", entity_type="lead",
+    next_fu = f.get("next_followup", "").strip() or None
+
+    # Link to existing patient if phone matches; else create unconfirmed internal record
+    pid = None
+    if phone:
+        norm = phone.replace(" ", "").replace("+", "").replace("-", "").strip()
+        p = db.q("""SELECT id, is_confirmed FROM patients
+            WHERE REPLACE(REPLACE(REPLACE(phone,' ',''),'+',''),'-','')=?""", (norm,), one=True)
+        pid = p["id"] if p else None
+    if not pid:
+        serial = h.next_serial_no()
+        pid = db.q("""INSERT INTO patients (name, phone, whatsapp, email, area, source, status,
+            profile_status, patient_code, serial_no, pipeline_stage, is_confirmed, created_at)
+            VALUES (?,?,?,?,?,?, 'lead', 'incomplete', ?, ?, '', 0, ?) RETURNING id""",
+            (name, phone, whatsapp, email, area, source,
+             h.next_patient_code(), serial, h.now()))[0]["id"]
+
+    lid = db.q("""INSERT INTO leads (patient_id, name, phone, whatsapp, email, area, source, platform, status, interest, notes, assigned_to, next_followup, created_at)
+        VALUES (?,?,?,?,?,?,?, '', 'new', ?, ?, ?, ?, ?) RETURNING id""",
+        (pid, name, phone, whatsapp, email, area, source, interest, notes, assigned_to, next_fu, h.now()))[0]["id"]
+
+    # Initial interaction entry in lead_history
+    if notes:
+        db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, due_date, logged_by, interaction_at, created_at)
+             VALUES (?, 'new', ?, ?, 'note', ?, ?, ?, ?)""",
+             (lid, notes, notes, next_fu, session.get("admin_uid"), h.now(), h.now()))
+
+    # Schedule follow-up if date provided
+    if next_fu:
+        db.q("""INSERT INTO followups (lead_id, patient_id, due_date, note, status, followup_type,
+            purpose, assigned_to, created_at) VALUES (?,?,?,?, 'pending', 'lead', ?, ?, ?)""",
+            (lid, pid, next_fu, f"Initial lead follow-up: {name}", notes or "Contact new lead", assigned_to, h.now()))
+
+    record("lead_create", f"id={lid} source={source}", entity_type="lead",
            entity_id=lid)
-    flash("Lead added.", "ok")
+    flash(f"Lead added for {name}.", "ok")
     return redirect(url_for("admin.leads", view="new"))
+
+
+@bp.route("/leads/<int:lid>")
+@login_required
+def lead_detail(lid):
+    if not has_cap("leads"):
+        abort(403)
+    scoped_uid = None if security.current_role() == "super_admin" else session["admin_uid"]
+    lead = db.q("""SELECT l.*,
+        COALESCE(NULLIF(l.name, ''), p.name, '') lead_name,
+        COALESCE(NULLIF(l.phone, ''), p.phone, '') lead_phone,
+        COALESCE(NULLIF(l.whatsapp, ''), p.whatsapp, '') lead_whatsapp,
+        COALESCE(NULLIF(l.email, ''), p.email, '') lead_email,
+        COALESCE(NULLIF(l.area, ''), p.area, '') lead_area,
+        p.id pid, p.serial_no, p.pipeline_stage, p.is_confirmed, p.patient_code,
+        su.username assigned_name, su.full_name assigned_full_name,
+        cu.username converted_by_name, cu.full_name converted_by_full_name
+        FROM leads l
+        LEFT JOIN patients p ON p.id=l.patient_id
+        LEFT JOIN users su ON su.id=l.assigned_to
+        LEFT JOIN users cu ON cu.id=l.converted_by
+        WHERE l.id=?""", (lid,), one=True)
+    if not lead:
+        abort(404)
+    if scoped_uid and lead["assigned_to"] and lead["assigned_to"] != scoped_uid:
+        abort(403)
+
+    # Conversation history: chronological order
+    history = db.q("""SELECT lh.*, u.username logged_username, u.full_name logged_fullname
+        FROM lead_history lh
+        LEFT JOIN users u ON u.id=lh.logged_by
+        WHERE lh.lead_id=?
+        ORDER BY COALESCE(lh.interaction_at, lh.created_at) ASC, lh.id ASC""", (lid,))
+
+    # Follow-ups for this lead
+    followups = db.q("""SELECT f.*, u.full_name assigned_fullname, u.username assigned_username
+        FROM followups f
+        LEFT JOIN users u ON u.id=f.assigned_to
+        WHERE f.lead_id=? OR (f.patient_id=? AND f.patient_id IS NOT NULL)
+        ORDER BY f.due_date DESC, f.id DESC""", (lid, lead["pid"]))
+
+    staff = [] if scoped_uid else db.q("SELECT id, username, full_name FROM users WHERE is_active=1 ORDER BY id")
+    today = h.today()
+    return render_template("admin/lead_detail.html", lead=lead, history=history,
+                           followups=followups, staff=staff, today=today, section="leads",
+                           lead_types=h.LEAD_TYPES)
+
+
+@bp.route("/leads/<int:lid>/edit", methods=["GET", "POST"])
+@login_required
+def lead_edit(lid):
+    if not has_cap("leads_edit"):
+        abort(403)
+    lead = db.q("""SELECT l.*, p.id pid, p.serial_no, p.patient_code,
+        COALESCE(NULLIF(l.name, ''), p.name, '') lead_name,
+        COALESCE(NULLIF(l.phone, ''), p.phone, '') lead_phone,
+        COALESCE(NULLIF(l.whatsapp, ''), p.whatsapp, '') lead_whatsapp,
+        COALESCE(NULLIF(l.email, ''), p.email, '') lead_email,
+        COALESCE(NULLIF(l.area, ''), p.area, '') lead_area
+        FROM leads l LEFT JOIN patients p ON p.id=l.patient_id WHERE l.id=?""",
+        (lid,), one=True)
+    if not lead:
+        abort(404)
+    if security.current_role() != "super_admin" and \
+            (lead["assigned_to"] or 0) != session["admin_uid"] and lead["assigned_to"] is not None:
+        abort(403)
+
+    if request.method == "POST":
+        f = request.form
+        name = f.get("name", "").strip()
+        phone = f.get("phone", "").strip()
+        if not name:
+            flash("Lead name is required.", "err")
+            return redirect(url_for("admin.lead_edit", lid=lid))
+        whatsapp = f.get("whatsapp", "").strip() or phone
+        email = f.get("email", "").strip()
+        area = f.get("area", "").strip()
+        source = f.get("source", "").strip() or lead["source"] or "Walk-in"
+        interest = f.get("interest", "").strip() or lead["interest"]
+        status = f.get("status", "").strip() or lead["status"]
+        assign_val = f.get("assigned_to", "").strip()
+        assigned_to = int(assign_val) if assign_val.isdigit() else None
+        next_followup = f.get("next_followup", "").strip() or None
+        notes = f.get("notes", "").strip()
+
+        # Update lead record
+        db.q("""UPDATE leads SET name=?, phone=?, whatsapp=?, email=?, area=?,
+            source=?, interest=?, status=?, assigned_to=?, next_followup=?, notes=?
+            WHERE id=?""",
+            (name, phone, whatsapp, email, area, source, interest, status,
+             assigned_to, next_followup, notes, lid))
+
+        # Synchronize linked internal patient record
+        if lead["patient_id"]:
+            db.q("""UPDATE patients SET name=?, phone=?, whatsapp=?, email=?, area=?
+                WHERE id=?""", (name, phone, whatsapp, email, area, lead["patient_id"]))
+
+        # Update or schedule follow-up if date set
+        if next_followup:
+            existing_fu = db.q("""SELECT id FROM followups
+                WHERE (lead_id=? OR patient_id=?) AND status='pending'
+                ORDER BY id DESC LIMIT 1""", (lid, lead["patient_id"]), one=True)
+            if existing_fu:
+                db.q("UPDATE followups SET due_date=?, assigned_to=? WHERE id=?",
+                     (next_followup, assigned_to, existing_fu["id"]))
+            else:
+                db.q("""INSERT INTO followups (lead_id, patient_id, due_date, note, status,
+                    followup_type, purpose, assigned_to, created_at)
+                    VALUES (?,?,?,?, 'pending', 'lead', ?, ?, ?)""",
+                    (lid, lead["patient_id"], next_followup, f"Follow up with {name}",
+                     notes or "Lead follow-up", assigned_to, h.now()))
+
+        record("lead_edit", f"id={lid} name={name} status={status}",
+               entity_type="lead", entity_id=lid)
+        flash("Lead details updated successfully.", "ok")
+        return redirect(url_for("admin.lead_detail", lid=lid))
+
+    # GET
+    staff = db.q("SELECT id, username, full_name FROM users WHERE is_active=1 ORDER BY id")
+    sources = [x["name"] for x in db.q("SELECT name FROM sources WHERE is_active=1 ORDER BY sort_order")]
+    return render_template("admin/lead_edit.html", lead=lead, staff=staff, sources=sources,
+                           lead_types=h.LEAD_TYPES, section="leads")
+
+
+@bp.route("/leads/<int:lid>/interaction", methods=["POST"])
+@login_required
+def lead_interaction(lid):
+    if not has_cap("leads_edit"):
+        abort(403)
+    lead = db.q("""SELECT l.*, p.id pid, p.name pname, p.serial_no
+        FROM leads l LEFT JOIN patients p ON p.id=l.patient_id WHERE l.id=?""",
+        (lid,), one=True)
+    if not lead:
+        abort(404)
+    if security.current_role() != "super_admin" and \
+            (lead["assigned_to"] or 0) != session["admin_uid"] and lead["assigned_to"] is not None:
+        abort(403)
+
+    f = request.form
+    comm_type = f.get("interaction_type", "call").strip().lower()
+    summary = f.get("summary", "").strip()
+    outcome = f.get("outcome", "Interested").strip()
+    notes = f.get("notes", "").strip()
+    has_next = f.get("next_followup_required", "no").strip().lower() == "yes"
+    next_date = f.get("next_followup_date", "").strip() or None
+
+    if not summary:
+        flash("Please provide a brief interaction summary.", "err")
+        return redirect(url_for("admin.lead_detail", lid=lid))
+
+    interaction_at = h.now()
+    fu_id = None
+    if has_next and next_date:
+        fu_rows = db.q("""INSERT INTO followups (lead_id, patient_id, due_date, note, status,
+            followup_type, purpose, assigned_to, created_at)
+            VALUES (?,?,?,?, 'pending', 'lead', ?, ?, ?) RETURNING id""",
+            (lid, lead["pid"], next_date, f"{comm_type.title()} follow-up: {summary[:100]}",
+             notes or summary, lead["assigned_to"], h.now()))
+        if fu_rows:
+            fu_id = fu_rows[0]["id"]
+        db.q("UPDATE leads SET next_followup=? WHERE id=?", (next_date, lid))
+
+    full_note = summary + (f"\nNotes: {notes}" if notes else "")
+    db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type,
+        due_date, logged_by, followup_id, interaction_at, created_at)
+        VALUES (?,?,?,?, ?, ?, ?, ?, ?, ?)""",
+        (lid, outcome, full_note, summary, comm_type, next_date,
+         session.get("admin_uid"), fu_id, interaction_at, h.now()))
+
+    outcome_lower = outcome.lower()
+    if "appointment" in outcome_lower:
+        db.q("UPDATE leads SET status='appointment' WHERE id=?", (lid,))
+    elif "not interested" in outcome_lower or "lost" in outcome_lower:
+        db.q("UPDATE leads SET status='lost' WHERE id=?", (lid,))
+    elif has_next:
+        db.q("UPDATE leads SET status='followup' WHERE id=?", (lid,))
+    elif lead["status"] == "new":
+        db.q("UPDATE leads SET status='contacted' WHERE id=?", (lid,))
+
+    record("lead_interaction", f"lead={lid} type={comm_type} outcome={outcome}",
+           entity_type="lead", entity_id=lid)
+    flash("Conversation entry recorded.", "ok")
+    return redirect(url_for("admin.lead_detail", lid=lid))
+
+
+@bp.route("/leads/<int:lid>/convert", methods=["POST"])
+@login_required
+def lead_convert(lid):
+    if not has_cap("leads_edit"):
+        abort(403)
+    lead = db.q("""SELECT l.*,
+        COALESCE(NULLIF(l.name, ''), p.name, '') lead_name,
+        COALESCE(NULLIF(l.phone, ''), p.phone, '') lead_phone,
+        COALESCE(NULLIF(l.whatsapp, ''), p.whatsapp, '') lead_whatsapp,
+        COALESCE(NULLIF(l.email, ''), p.email, '') lead_email,
+        COALESCE(NULLIF(l.area, ''), p.area, '') lead_area,
+        p.id pid, p.serial_no, p.pipeline_stage, p.is_confirmed, p.patient_code
+        FROM leads l LEFT JOIN patients p ON p.id=l.patient_id WHERE l.id=?""",
+        (lid,), one=True)
+    if not lead:
+        abort(404)
+
+    pid = lead["pid"]
+    phone = lead["lead_phone"]
+    # Check for existing confirmed patient to reuse
+    if phone:
+        norm = phone.replace(" ", "").replace("+", "").replace("-", "").strip()
+        match = db.q("""SELECT id, serial_no, name FROM patients
+            WHERE is_confirmed=1 AND REPLACE(REPLACE(REPLACE(phone,' ',''),'+',''),'-','')=?""",
+            (norm,), one=True)
+        if match:
+            pid = match["id"]
+
+    now_ts = h.now()
+    if pid:
+        # Confirm existing patient record
+        db.q("""UPDATE patients SET is_confirmed=1, status='active',
+            pipeline_stage=CASE WHEN pipeline_stage='' OR pipeline_stage='completed' THEN 'consultation' ELSE pipeline_stage END,
+            stage_updated_at=? WHERE id=?""", (now_ts, pid))
+    else:
+        # Create Master Patient record
+        serial = h.next_serial_no()
+        pcode = h.next_patient_code()
+        p_rows = db.q("""INSERT INTO patients (name, phone, whatsapp, email, area, source, status,
+            profile_status, patient_code, serial_no, pipeline_stage, stage_updated_at, is_confirmed, created_at)
+            VALUES (?,?,?,?,?,?, 'active', 'complete', ?, ?, 'consultation', ?, 1, ?) RETURNING id""",
+            (lead["lead_name"] or "Patient", lead["lead_phone"], lead["lead_whatsapp"], lead["lead_email"],
+             lead["lead_area"], lead["source"] or "Walk-in", pcode, serial, now_ts, now_ts))
+        pid = p_rows[0]["id"]
+
+    # Mark lead as converted and link to patient
+    db.q("""UPDATE leads SET patient_id=?, status='converted', converted_at=?, converted_by=?
+        WHERE id=?""", (pid, now_ts, session.get("admin_uid"), lid))
+
+    # Link followups to patient
+    db.q("UPDATE followups SET patient_id=? WHERE lead_id=?", (pid, lid))
+
+    p_info = db.q("SELECT serial_no, name, patient_code FROM patients WHERE id=?", (pid,), one=True)
+    db.q("""INSERT INTO patient_stage_log (patient_id, stage, note, created_at)
+        VALUES (?, 'consultation', ?, ?)""",
+        (pid, f"Converted from Lead #{lid} by {session.get('admin_user')}", now_ts))
+    db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, logged_by, interaction_at, created_at)
+        VALUES (?, 'converted', ?, ?, 'status_change', ?, ?, ?)""",
+        (lid, f"Lead converted to Confirmed Patient #{p_info['serial_no']}",
+         "Converted to Confirmed Master Patient", session.get("admin_uid"), now_ts, now_ts))
+
+    record("lead_convert", f"lead={lid} patient={pid} serial={p_info['serial_no']}",
+           entity_type="lead", entity_id=lid)
+    flash(f"{p_info['name']} (#{p_info['serial_no']}) converted to Confirmed Master Patient.", "ok")
+    return redirect(url_for("admin.patient_detail", pid=pid))
 
 
 @bp.route("/leads/<int:lid>/outcome/<outcome>", methods=["POST"])
@@ -415,15 +713,17 @@ def lead_outcome(lid, outcome):
     if not lead:
         abort(404)
     if security.current_role() != "super_admin" and \
-            (lead["assigned_to"] or 0) != session["admin_uid"]:
+            (lead["assigned_to"] or 0) != session["admin_uid"] and lead["assigned_to"] is not None:
         abort(403)  # staff can only work their own leads
     f = request.form
     note = f.get("note", "").strip()
     status = LEAD_OUTCOMES[outcome][0]
     db.q("UPDATE leads SET status=? WHERE id=?", (status, lid))
     due = f.get("due_date") or None
-    db.q("INSERT INTO lead_history (lead_id, outcome, note, due_date, created_at) "
-         "VALUES (?,?,?,?,?)", (lid, outcome, note, due, h.now()))
+    db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, due_date, logged_by, interaction_at, created_at)
+         VALUES (?,?,?,?, ?, ?, ?, ?, ?)""",
+         (lid, outcome, note, note or f"Status changed to {outcome}", "status_change", due,
+          session.get("admin_uid"), h.now(), h.now()))
 
     if outcome == "appointment" and lead["pid"]:
         # Converted: open (or continue) the patient's pipeline at Consultation
@@ -441,9 +741,9 @@ def lead_outcome(lid, outcome):
         return redirect(url_for("admin.patient_detail", pid=lead["pid"]))
 
     if outcome == "followup" and lead["pid"]:
-        db.q("""INSERT INTO followups (patient_id, due_date, note, status, followup_type,
-            purpose, created_at) VALUES (?,?,?, 'pending', 'Lead follow-up', ?, ?)""",
-            (lead["pid"], due or h.today(), note or "Follow up with lead",
+        db.q("""INSERT INTO followups (lead_id, patient_id, due_date, note, status, followup_type,
+            purpose, created_at) VALUES (?,?,?,?, 'pending', 'Lead follow-up', ?, ?)""",
+            (lid, lead["pid"], due or h.today(), note or "Follow up with lead",
              note or "Follow up with lead", h.now()))
         record("lead_followup", f"lead={lid} due={due or h.today()}",
                entity_type="lead", entity_id=lid)
@@ -463,7 +763,6 @@ def lead_delete(lid):
     record("lead_delete", f"id={lid}")
     flash("Lead deleted.", "ok")
     return redirect(url_for("admin.leads"))
-
 
 # -------------------------------------------------------------- follow-ups
 @bp.route("/followups")
@@ -517,6 +816,15 @@ def followup_complete(fid):
          "note=? WHERE id=?",
          (h.now(), session.get("admin_uid"),
           (fu["note"] or "") + ((f" — {note}") if note else ""), fid))
+    if fu.get("lead_id"):
+        db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type,
+            logged_by, followup_id, interaction_at, created_at)
+            VALUES (?, 'completed', ?, ?, 'call', ?, ?, ?, ?)""",
+            (fu["lead_id"], f"Follow-up completed: {note or fu['note'] or 'Done'}",
+             note or "Follow-up marked as completed", session.get("admin_uid"), fid, h.now(), h.now()))
+        next_pend = db.q("SELECT due_date FROM followups WHERE lead_id=? AND status='pending' ORDER BY due_date ASC LIMIT 1",
+                         (fu["lead_id"],), one=True)
+        db.q("UPDATE leads SET next_followup=? WHERE id=?", (next_pend["due_date"] if next_pend else None, fu["lead_id"]))
     record("followup_complete", f"id={fid}", entity_type="patient",
            entity_id=fu["patient_id"])
     flash("Follow-up completed.", "ok")

@@ -1,0 +1,120 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Edit Lead #{{ lead.id }} — {{ lead.lead_name or 'Edit Lead' }}{% endblock %}
+
+{% block content %}
+<div class="topbar" style="margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="/admin/leads/{{ lead.id }}" class="btn btn-o btn-xs">← Back to Lead Details</a>
+    <h1 style="margin:0;font-size:1.45rem">✏️ Edit Lead #{{ lead.id }}</h1>
+  </div>
+</div>
+
+<div class="card" style="max-width:760px;padding:24px;border-radius:14px;background:#fff;margin:0 auto">
+  <div style="margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:12px">
+    <h2 style="margin:0 0 4px;font-size:1.2rem;color:#0f172a">Edit Lead Information</h2>
+    <p class="muted" style="margin:0;font-size:.88rem">
+      Correct any typos or update details. Original creation date and historical interaction logs are always preserved.
+    </p>
+  </div>
+
+  <form method="post" action="/admin/leads/{{ lead.id }}/edit" class="fgrid">
+    {{ csrf_field() }}
+
+    <!-- Name & Phone -->
+    <div>
+      <label style="font-weight:600">Patient / Prospect Name *</label>
+      <input name="name" required value="{{ lead.lead_name or '' }}" placeholder="Full Name" style="padding:8px 12px;border-radius:8px">
+    </div>
+
+    <div>
+      <label style="font-weight:600">Phone Number *</label>
+      <input name="phone" required value="{{ lead.lead_phone or '' }}" placeholder="+91 98765 43210" style="padding:8px 12px;border-radius:8px">
+    </div>
+
+    <!-- WhatsApp & Email -->
+    <div>
+      <label style="font-weight:600">WhatsApp Number</label>
+      <input name="whatsapp" value="{{ lead.lead_whatsapp or lead.lead_phone or '' }}" placeholder="+91 98765 43210" style="padding:8px 12px;border-radius:8px">
+    </div>
+
+    <div>
+      <label style="font-weight:600">Email Address</label>
+      <input type="email" name="email" value="{{ lead.lead_email or '' }}" placeholder="patient@example.com" style="padding:8px 12px;border-radius:8px">
+    </div>
+
+    <!-- Area & Service -->
+    <div>
+      <label style="font-weight:600">Location / Area</label>
+      <input name="area" value="{{ lead.lead_area or '' }}" placeholder="e.g. South Delhi, Noida, Jaipur" style="padding:8px 12px;border-radius:8px">
+    </div>
+
+    <div>
+      <label style="font-weight:600">Required Service / Treatment</label>
+      <select name="interest" style="padding:8px 12px;border-radius:8px">
+        {% for t in lead_types %}
+        <option value="{{ t }}" {{ 'selected' if lead.interest == t }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Lead Source & Status -->
+    <div>
+      <label style="font-weight:600">Lead Source</label>
+      <select name="source" style="padding:8px 12px;border-radius:8px">
+        {% for s in sources %}
+        <option value="{{ s }}" {{ 'selected' if lead.source == s }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="font-weight:600">Lead Status</label>
+      <select name="status" style="padding:8px 12px;border-radius:8px">
+        {% for st_val, st_label in [
+          ('new', 'New Lead'),
+          ('contacted', 'Contacted'),
+          ('followup', 'Follow-up Due'),
+          ('appointment', 'Appointment Scheduled'),
+          ('assessment', 'Assessment'),
+          ('hold', 'On Hold'),
+          ('lost', 'Lost / Not Interested'),
+          ('converted', 'Converted to Patient')
+        ] %}
+        <option value="{{ st_val }}" {{ 'selected' if lead.status == st_val }}>{{ st_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Staff assignment & Next Follow-up -->
+    <div>
+      <label style="font-weight:600">Assigned Staff Member</label>
+      <select name="assigned_to" style="padding:8px 12px;border-radius:8px">
+        <option value="">Not assigned</option>
+        {% for u in staff %}
+        <option value="{{ u.id }}" {{ 'selected' if lead.assigned_to == u.id }}>{{ u.full_name or u.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="font-weight:600">Next Follow-up Date</label>
+      <input type="date" name="next_followup" value="{{ lead.next_followup or '' }}" style="padding:7px 12px;border-radius:8px">
+    </div>
+
+    <!-- Notes -->
+    <div class="full">
+      <label style="font-weight:600">Inquiry Notes / Details</label>
+      <textarea name="notes" rows="3" placeholder="Case background, amputation level, consultation requests..." style="padding:10px 12px;border-radius:8px">{{ lead.notes or '' }}</textarea>
+    </div>
+
+    <!-- Actions -->
+    <div class="full" style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px;border-top:1px solid var(--line);padding-top:16px">
+      <a href="/admin/leads/{{ lead.id }}" class="btn btn-o" style="padding:9px 18px">Cancel</a>
+      <button type="submit" class="btn btn-p" style="background:#0e7490;border-color:#0891b2;padding:9px 24px;font-weight:700">
+        ✓ Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

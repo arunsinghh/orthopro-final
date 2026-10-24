@@ -122,10 +122,34 @@
     {% if srow.note %}<span class="muted">{{ srow.note }}</span>{% endif %}</div>
   {% else %}<p class="muted">No history yet.</p>{% endfor %}
   {% if leads %}
-  <h4 style="margin-bottom:2px">Leads</h4>
-  {% for l in leads %}<div style="padding:5px 0;border-top:1px solid #f1f5f9" class="muted">
-    {{ l.created_at[:10] if l.created_at else '' }} — {{ l.source or 'Admin' }}{% if l.platform %} / {{ l.platform }}{% endif %}
-    · status: {{ l.status }}</div>{% endfor %}
+  <h4 style="margin-bottom:2px;margin-top:14px">Linked Leads</h4>
+  {% for l in leads %}<div style="padding:6px 0;border-top:1px solid #f1f5f9;font-size:.88rem">
+    <a href="/admin/leads/{{ l.id }}" style="font-weight:700">Lead #{{ l.id }}</a> —
+    {{ l.source or 'Admin' }}{% if l.platform %} ({{ l.platform|title }}){% endif %}
+    · status: <span class="tag tag-pen">{{ l.status }}</span>
+    <span class="muted">· {{ l.created_at[:10]|dshort if l.created_at else '' }}</span>
+  </div>{% endfor %}
+  {% endif %}
+
+  {% if interactions %}
+  <h4 style="margin:16px 0 6px;color:#0e7490">💬 Conversation &amp; Follow-up History</h4>
+  <p class="muted" style="margin:0 0 10px;font-size:.85rem">Every call summary, WhatsApp note, and interaction recorded during lead follow-up is preserved here.</p>
+  {% for itm in interactions %}
+  <div style="padding:10px 12px;border-top:1px solid #f1f5f9;background:#f8fafc;border-radius:8px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;margin-bottom:4px">
+      <div>
+        <b>{{ (itm.interaction_type or 'call')|title }}</b> ·
+        <span class="tag tag-pen" style="font-size:.72rem">{{ itm.outcome|title }}</span>
+        {% if itm.staff_name or itm.staff_user %}<span class="muted">by {{ itm.staff_name or itm.staff_user }}</span>{% endif %}
+      </div>
+      <div class="muted">{{ (itm.interaction_at or itm.created_at)|dtfmt }}</div>
+    </div>
+    <div style="font-size:.88rem;color:#1e293b">{{ itm.summary or itm.note }}</div>
+    {% if itm.due_date %}
+    <div style="font-size:.78rem;color:#0284c7;margin-top:4px">📅 Scheduled follow-up: {{ itm.due_date|dshort }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
   {% endif %}
 </div>
 

@@ -1,0 +1,499 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Lead #{{ lead.id }} — {{ lead.lead_name or 'Lead Details' }}{% endblock %}
+
+{% set type_colors = {
+  'Lower Limb (Leg)': '#0e7490',
+  'Upper Limb (Hand/Arm)': '#2563eb',
+  'Braces & Orthotics': '#7c3aed',
+  'Diabetic Foot Care': '#d97706',
+  'Wheelchair & Mobility': '#0f766e',
+  'Repair / Service': '#64748b',
+  'Other': '#64748b'
+} %}
+
+{% set comm_icons = {
+  'call': '📞',
+  'whatsapp': '💬',
+  'sms': '✉️',
+  'email': '📧',
+  'in_person': '👥',
+  'note': '📝',
+  'status_change': '⚡',
+  'facebook': '📘',
+  'instagram': '📷',
+  'other': '📋'
+} %}
+
+{% set comm_labels = {
+  'call': 'Phone Call',
+  'whatsapp': 'WhatsApp',
+  'sms': 'SMS Message',
+  'email': 'Email',
+  'in_person': 'In-Person Conversation',
+  'note': 'Internal Note',
+  'status_change': 'Status Change',
+  'facebook': 'Facebook Lead',
+  'instagram': 'Instagram Lead',
+  'other': 'Other Interaction'
+} %}
+
+{% set outcome_colors = {
+  'interested': '#16a34a',
+  'appointment requested': '#0e7490',
+  'appointment': '#0e7490',
+  'call back requested': '#f59e0b',
+  'no response': '#64748b',
+  'not interested': '#dc2626',
+  'lost': '#dc2626',
+  'converted': '#059669',
+  'followup': '#0284c7',
+  'hold': '#64748b'
+} %}
+
+{% block content %}
+
+<!-- Top bar -->
+<div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <a href="/admin/leads" class="btn btn-o btn-xs" style="padding:6px 10px;border-radius:6px">← All Leads</a>
+    <h1 style="margin:0;font-size:1.45rem;display:flex;align-items:center;gap:8px">
+      <span>{{ lead.lead_name or 'Lead #' ~ lead.id }}</span>
+      <span class="tag tag-new" style="font-size:.65em;vertical-align:middle">LEAD-{{ '%05d'|format(lead.id) }}</span>
+      {% if lead.status == 'converted' %}
+      <span class="tag tag-ok" style="font-size:.65em;background:#10b981;color:#fff">✓ Converted</span>
+      {% elif lead.status == 'new' %}
+      <span class="tag tag-due" style="font-size:.65em">New Lead</span>
+      {% elif lead.status == 'appointment' %}
+      <span class="tag tag-ok" style="font-size:.65em">Appointment</span>
+      {% elif lead.status == 'followup' %}
+      <span class="tag tag-pen" style="font-size:.65em">Follow-up Due</span>
+      {% elif lead.status == 'hold' %}
+      <span class="tag tag-new" style="font-size:.65em">On Hold</span>
+      {% elif lead.status == 'lost' %}
+      <span class="tag tag-new" style="font-size:.65em;background:#fee2e2;color:#991b1b">Lost</span>
+      {% else %}
+      <span class="tag tag-pen" style="font-size:.65em">{{ lead.status|title }}</span>
+      {% endif %}
+    </h1>
+  </div>
+
+  <!-- Primary Actions -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    {% set phone_clean = (lead.lead_phone or '')|replace(' ','')|replace('+','')|replace('-','') %}
+    {% if lead.lead_phone %}
+    <a href="tel:{{ lead.lead_phone }}" class="btn btn-o btn-xs" style="padding:7px 12px;border-radius:6px;font-weight:600">
+      📞 Call
+    </a>
+    {% endif %}
+
+    {% set wa_clean = (lead.lead_whatsapp or lead.lead_phone or '')|replace(' ','')|replace('+','')|replace('-','') %}
+    {% if wa_clean %}
+    {% set wa_greet = "Hello " ~ (lead.lead_name or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center regarding " ~ (lead.interest or 'consultation') ~ ". How can we assist you today?" %}
+    <a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa_clean }}&text={{ wa_greet|urlencode }}"
+       class="btn btn-xs" style="background:#16a34a;border-color:#15803d;color:#fff;padding:7px 12px;border-radius:6px;font-weight:600">
+      💬 WhatsApp
+    </a>
+    {% endif %}
+
+    {% if can("leads_edit") %}
+    <a href="/admin/leads/{{ lead.id }}/edit" class="btn btn-o btn-xs" style="padding:7px 12px;border-radius:6px;font-weight:600">
+      ✏️ Edit Lead
+    </a>
+    {% endif %}
+
+    {% if lead.status != 'converted' and can("leads_edit") %}
+    <button type="button" onclick="openConvertModal()" class="btn btn-p btn-xs"
+            style="background:#0e7490;border-color:#0891b2;color:#fff;padding:7px 14px;border-radius:6px;font-weight:700">
+      👤 Convert to Patient →
+    </button>
+    {% elif lead.status == 'converted' and lead.pid %}
+    <a href="/admin/patients/{{ lead.pid }}" class="btn btn-p btn-xs"
+       style="background:#059669;border-color:#047857;color:#fff;padding:7px 14px;border-radius:6px;font-weight:700">
+      👤 Open Patient Profile #{{ lead.serial_no }} →
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if lead.status == 'converted' and lead.pid %}
+<div class="card" style="background:#f0fdf4;border-left:5px solid #16a34a;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:1.4rem">✅</span>
+    <div>
+      <b style="color:#15803d;font-size:1rem">This lead was converted into a Confirmed Master Patient</b>
+      <div class="muted" style="font-size:.85rem">
+        Converted on {{ lead.converted_at|dtfmt }}{% if lead.converted_by_name %} by {{ lead.converted_by_full_name or lead.converted_by_name }}{% endif %}.
+        Patient Code: <b>{{ lead.patient_code or 'OP-' ~ '%05d'|format(lead.pid) }}</b> · Serial #<b>{{ lead.serial_no }}</b>
+      </div>
+    </div>
+  </div>
+  <a href="/admin/patients/{{ lead.pid }}" class="btn btn-xs btn-p" style="background:#16a34a;border-color:#15803d">View Confirmed Patient Profile →</a>
+</div>
+{% endif %}
+
+<!-- 2-column layout: Left details & actions, Right WhatsApp-style timeline -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;align-items:start">
+
+  <!-- LEFT COLUMN: Lead Information & Quick Actions -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Prospect Details Card -->
+    <div class="card" style="padding:18px 20px;border-radius:12px;background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+        <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:6px">
+          <span>📋 Prospect Overview</span>
+        </h3>
+        {% if can("leads_edit") %}
+        <a href="/admin/leads/{{ lead.id }}/edit" class="btn btn-xs btn-o" style="padding:3px 8px;font-size:.78rem">Edit Details</a>
+        {% endif %}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.9rem">
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">PATIENT / PROSPECT NAME</span>
+          <b style="font-size:1rem;color:var(--txt)">{{ lead.lead_name or '—' }}</b>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">PHONE NUMBER</span>
+          <b>{{ lead.lead_phone or '—' }}</b>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">WHATSAPP NUMBER</span>
+          <b>{{ lead.lead_whatsapp or lead.lead_phone or '—' }}</b>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">LOCATION / AREA</span>
+          <b>{{ lead.lead_area or '—' }}</b>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">EMAIL ADDRESS</span>
+          <b>{{ lead.lead_email or '—' }}</b>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">LEAD SOURCE</span>
+          <span class="tag tag-new" style="font-size:.82rem">{{ lead.source or 'Walk-in' }}</span>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">REQUESTED SERVICE</span>
+          <span style="display:inline-block;background:{{ type_colors.get(lead.interest, '#0e7490') }};color:#fff;font-weight:700;font-size:.76rem;padding:2px 8px;border-radius:6px;margin-top:2px">
+            {{ lead.interest or 'General Enquiry' }}
+          </span>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">ASSIGNED STAFF</span>
+          {% if lead.assigned_name %}
+          <span class="tag" style="background:#e0f2fe;color:#0369a1;font-size:.82rem">👤 {{ lead.assigned_full_name or lead.assigned_name }}</span>
+          {% else %}
+          <span class="muted" style="font-size:.82rem">Not assigned</span>
+          {% endif %}
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">FIRST CONTACT / RECEIVED</span>
+          <span class="muted">{{ lead.created_at|dtfmt }}</span>
+        </div>
+        <div>
+          <span class="muted" style="font-size:.78rem;display:block">NEXT FOLLOW-UP</span>
+          {% if lead.next_followup %}
+          <b style="color:{{ '#b91c1c' if lead.next_followup <= today else '#0e7490' }}">
+            {{ lead.next_followup|dshort }}
+            {% if lead.next_followup <= today %}<span class="tag tag-due" style="font-size:.7rem">Due</span>{% endif %}
+          </b>
+          {% else %}
+          <span class="muted">None scheduled</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if lead.notes %}
+      <div style="margin-top:14px;padding:10px 12px;background:#f8fafc;border-left:4px solid #0e7490;border-radius:6px;font-size:.88rem">
+        <span class="muted" style="font-size:.75rem;font-weight:700;letter-spacing:.03em;display:block;margin-bottom:2px">INITIAL INQUIRY NOTE:</span>
+        {{ lead.notes }}
+      </div>
+      {% endif %}
+
+      <!-- Marketing & Meta Attribution (Collapsible) -->
+      {% if lead.platform or lead.meta_lead_id or lead.campaign_id or lead.form_id %}
+      <details style="margin-top:14px;font-size:.82rem;border-top:1px solid #f1f5f9;padding-top:10px">
+        <summary class="muted" style="cursor:pointer;font-weight:600">📊 Marketing Attribution &amp; Meta Details</summary>
+        <div style="background:#f8fafc;padding:10px;border-radius:6px;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><span class="muted">Platform:</span> <b>{{ lead.platform|title }}</b></div>
+          <div><span class="muted">Meta Lead ID:</span> <code>{{ lead.meta_lead_id or '—' }}</code></div>
+          <div><span class="muted">Form ID:</span> <code>{{ lead.form_id or '—' }}</code></div>
+          <div><span class="muted">Campaign ID:</span> <code>{{ lead.campaign_id or '—' }}</code></div>
+          <div><span class="muted">AdSet ID:</span> <code>{{ lead.adset_id or '—' }}</code></div>
+          <div><span class="muted">Ad ID:</span> <code>{{ lead.ad_id or '—' }}</code></div>
+        </div>
+      </details>
+      {% endif %}
+    </div>
+
+    <!-- Quick Status Update Card -->
+    {% if can("leads_edit") and lead.status != 'converted' %}
+    <div class="card" style="padding:16px 20px;border-radius:12px;background:#fff">
+      <h3 style="margin:0 0 10px;font-size:1.05rem">⚡ Quick Status &amp; Stage Action</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <form method="post" action="/admin/leads/{{ lead.id }}/outcome/appointment" style="display:inline">
+          {{ csrf_field() }}
+          <button class="btn btn-xs btn-p" title="Schedule appointment">📅 Appointment</button>
+        </form>
+        <form method="post" action="/admin/leads/{{ lead.id }}/outcome/followup" style="display:inline">
+          {{ csrf_field() }}
+          <input type="hidden" name="due_date" value="{{ today }}">
+          <button class="btn btn-xs btn-o">🔁 Follow-up Due</button>
+        </form>
+        <form method="post" action="/admin/leads/{{ lead.id }}/outcome/hold" style="display:inline">
+          {{ csrf_field() }}
+          <button class="btn btn-xs btn-o">⏸ On Hold</button>
+        </form>
+        <form method="post" action="/admin/leads/{{ lead.id }}/outcome/lost" style="display:inline" data-confirm="Mark this lead as lost?">
+          {{ csrf_field() }}
+          <button class="btn btn-xs btn-o" style="color:#b91c1c;border-color:#fca5a5">✖ Lost</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Scheduled Follow-ups for this lead -->
+    {% if followups %}
+    <div class="card" style="padding:16px 20px;border-radius:12px;background:#fff">
+      <h3 style="margin:0 0 10px;font-size:1.05rem;display:flex;align-items:center;justify-content:space-between">
+        <span>🔔 Scheduled Follow-ups</span>
+        <span class="badge" style="background:#0e7490;color:#fff">{{ followups|length }}</span>
+      </h3>
+      {% for f in followups %}
+      <div style="padding:8px 0;border-top:1px solid #f1f5f9;font-size:.88rem;display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div>
+          <div style="display:flex;align-items:center;gap:6px">
+            {% if f.status == 'pending' and f.due_date <= today %}<span class="tag tag-due">Due Today</span>
+            {% elif f.status == 'pending' %}<span class="tag tag-pen">Pending</span>
+            {% else %}<span class="tag tag-ok">Completed</span>{% endif %}
+            <b>{{ f.due_date|dshort }}</b>
+          </div>
+          <div class="muted" style="font-size:.82rem;margin-top:2px">{{ f.note or f.purpose }}</div>
+          {% if f.assigned_fullname or f.assigned_username %}
+          <div class="muted" style="font-size:.76rem">👤 Assigned: {{ f.assigned_fullname or f.assigned_username }}</div>
+          {% endif %}
+        </div>
+        {% if f.status == 'pending' %}
+        <form method="post" action="/admin/followups/{{ f.id }}/complete">
+          {{ csrf_field() }}
+          <button class="btn btn-xs btn-p" style="padding:4px 8px;font-size:.78rem">✓ Done</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT COLUMN: WhatsApp-Style Conversation History / Chat Timeline -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Timeline Container Card -->
+    <div class="card" style="padding:20px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.03)">
+
+      <!-- Timeline Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:2px solid #e2e8f0;padding-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <h2 style="margin:0;font-size:1.2rem;display:flex;align-items:center;gap:8px;color:#0f172a">
+            <span>💬 Follow-up &amp; Conversation History</span>
+            <span class="badge" style="background:#16a34a;color:#fff;font-size:.8rem">{{ history|length }} entries</span>
+          </h2>
+          <div class="muted" style="font-size:.82rem;margin-top:2px">
+            Complete audit-preserved timeline of calls, WhatsApp notes, outcomes, and scheduled follow-ups.
+          </div>
+        </div>
+
+        {% if lead.next_followup %}
+        <div style="background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:8px;font-size:.82rem">
+          <span class="muted">Next Follow-up:</span> <b>{{ lead.next_followup|dshort }}</b>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Conversation Chat Feed -->
+      {% if not history %}
+      <div style="text-align:center;padding:36px 16px;color:#64748b;background:#fff;border-radius:10px;border:1px dashed #cbd5e1">
+        <div style="font-size:2rem;margin-bottom:6px">📞</div>
+        <b>No conversation entries recorded yet.</b>
+        <p style="margin:4px 0 0;font-size:.85rem">Use the quick form below to record your first call, message summary, or follow-up note.</p>
+      </div>
+      {% else %}
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        {% for item in history %}
+        {% set itype = item.interaction_type or 'call' %}
+        {% set ioutcome = (item.outcome or 'note')|lower %}
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:5px solid {{ outcome_colors.get(ioutcome, '#0e7490') }};border-radius:10px;padding:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.02)">
+
+          <!-- Card Header: Type, Staff, Timestamp -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:1.1rem">{{ comm_icons.get(itype, '📋') }}</span>
+              <b style="font-size:.9rem;color:#0f172a">{{ comm_labels.get(itype, itype|title) }}</b>
+              <span style="background:{{ outcome_colors.get(ioutcome, '#64748b') }};color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px">
+                {{ item.outcome|title }}
+              </span>
+            </div>
+            <div class="muted" style="font-size:.78rem">
+              🕒 {{ (item.interaction_at or item.created_at)|dtfmt }}
+            </div>
+          </div>
+
+          <!-- Discussion Summary & Note Content -->
+          <div style="font-size:.92rem;color:#1e293b;line-height:1.5;margin:6px 0;white-space:pre-wrap">
+            {{ item.summary or item.note or 'No notes recorded.' }}
+          </div>
+
+          <!-- Footer: Next follow-up & Staff signature -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:.78rem;flex-wrap:wrap;gap:6px">
+            <div>
+              {% if item.due_date %}
+              <span style="color:#0284c7;font-weight:600">📅 Follow-up scheduled: {{ item.due_date|dshort }}</span>
+              {% endif %}
+            </div>
+            <div class="muted">
+              👤 Recorded by: <b>{{ item.logged_fullname or item.logged_username or 'Staff' }}</b>
+            </div>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+
+      {% endif %}
+
+      <!-- Add Interaction Form (WhatsApp-Style Quick Entry) -->
+      {% if can("leads_edit") %}
+      <div style="background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;padding:16px 18px;margin-top:8px;box-shadow:0 2px 6px rgba(0,0,0,0.04)">
+        <h3 style="margin:0 0 12px;font-size:1rem;color:#0e7490;display:flex;align-items:center;gap:6px">
+          <span>➕ Record Call / WhatsApp Interaction</span>
+        </h3>
+
+        <form method="post" action="/admin/leads/{{ lead.id }}/interaction">
+          {{ csrf_field() }}
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <label style="font-size:.82rem;font-weight:600">Interaction Type *</label>
+              <select name="interaction_type" style="padding:6px 10px;font-size:.88rem;border-radius:6px;width:100%" required>
+                <option value="call">📞 Phone Call</option>
+                <option value="whatsapp">💬 WhatsApp</option>
+                <option value="sms">✉️ SMS</option>
+                <option value="email">📧 Email</option>
+                <option value="in_person">👥 In-person Conversation</option>
+                <option value="other">📋 Other</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:.82rem;font-weight:600">Outcome *</label>
+              <select name="outcome" style="padding:6px 10px;font-size:.88rem;border-radius:6px;width:100%" required>
+                <option value="Interested">Interested</option>
+                <option value="No Response">No Response / Unreachable</option>
+                <option value="Call Back Requested">Call Back Requested</option>
+                <option value="Appointment Requested">Appointment Requested</option>
+                <option value="Not Interested">Not Interested</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom:10px">
+            <label style="font-size:.82rem;font-weight:600">Discussion Summary *</label>
+            <textarea name="summary" rows="3" required
+                      placeholder="e.g. Called prospect. Explained lower limb prosthesis options and estimated costs. Patient requested call back tomorrow morning."
+                      style="width:100%;padding:8px 12px;font-size:.88rem;border-radius:6px;border:1px solid #cbd5e1"></textarea>
+          </div>
+
+          <!-- Follow-up Toggle Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;align-items:end">
+            <div>
+              <label style="font-size:.82rem;font-weight:600">Next Follow-up Required?</label>
+              <select name="next_followup_required" id="next-fu-select" onchange="toggleNextDateField(this.value)"
+                      style="padding:6px 10px;font-size:.88rem;border-radius:6px;width:100%">
+                <option value="no">No</option>
+                <option value="yes">Yes — Schedule Next Follow-up</option>
+              </select>
+            </div>
+            <div id="next-date-container" style="display:none">
+              <label style="font-size:.82rem;font-weight:600">Next Follow-up Date *</label>
+              <input type="date" name="next_followup_date" id="next-fu-date" value="{{ today }}"
+                     style="padding:5px 8px;font-size:.88rem;border-radius:6px;width:100%">
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;border-top:1px solid #f1f5f9;padding-top:10px">
+            <span class="muted" style="font-size:.78rem">Timestamp &amp; logged staff are recorded automatically.</span>
+            <button type="submit" class="btn btn-p" style="background:#16a34a;border-color:#15803d;padding:8px 18px;border-radius:8px;font-weight:700">
+              ✓ Save Interaction
+            </button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Convert to Patient Confirmation Modal -->
+{% if can("leads_edit") and lead.status != 'converted' %}
+<div id="convert-lead-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="width:100%;max-width:500px;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
+      <h3 style="margin:0;font-size:1.18rem;display:flex;align-items:center;gap:8px;color:#0e7490">
+        <span>👤 Convert Lead to Confirmed Patient</span>
+      </h3>
+      <button type="button" onclick="closeConvertModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut)">&times;</button>
+    </div>
+
+    <p style="font-size:.92rem;color:#334155;line-height:1.5;margin-bottom:14px">
+      Are you sure you want to convert this lead into a <b>Confirmed Master Patient</b>?
+    </p>
+
+    <div style="background:#f0fdfa;border:1px solid #99f6e4;padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:.88rem">
+      <div><b>Prospect Name:</b> {{ lead.lead_name or '—' }}</div>
+      <div><b>Phone:</b> {{ lead.lead_phone or '—' }}</div>
+      <div><b>Service:</b> {{ lead.interest or 'General' }}</div>
+    </div>
+
+    <ul style="font-size:.82rem;color:#64748b;margin:0 0 16px 18px;padding:0;line-height:1.5">
+      <li>All lead details, interaction history, and notes will be preserved.</li>
+      <li>The patient will appear in the confirmed <b>Master Patient List</b>.</li>
+      <li>If this person already has a patient profile, their existing record will be reused without duplicating.</li>
+    </ul>
+
+    <form method="post" action="/admin/leads/{{ lead.id }}/convert" style="display:flex;gap:10px;justify-content:flex-end">
+      {{ csrf_field() }}
+      <button type="button" class="btn btn-o" onclick="closeConvertModal()">Cancel</button>
+      <button type="submit" class="btn btn-p" style="background:#0e7490;border-color:#0891b2;font-weight:700">
+        ✓ Confirm &amp; Convert to Patient
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function toggleNextDateField(val) {
+  var c = document.getElementById("next-date-container");
+  if (c) c.style.display = (val === "yes") ? "block" : "none";
+}
+function openConvertModal() {
+  var m = document.getElementById("convert-lead-modal");
+  if (m) m.style.display = "flex";
+}
+function closeConvertModal() {
+  var m = document.getElementById("convert-lead-modal");
+  if (m) m.style.display = "none";
+}
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeConvertModal();
+});
+</script>
+
+{% endblock %}
+

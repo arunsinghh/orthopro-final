@@ -10,7 +10,7 @@
   <div>
     <h1 style="margin:0">{{ "📞 My Leads" if scoped else "📞 Leads" }}</h1>
     <p class="muted" style="margin:4px 0 0">
-      Real-time pipeline: manage and respond to incoming leads from <b>💬 WhatsApp Webhook</b> and <b>📋 Manual &amp; Website Appointments</b>.
+      Manage and respond to incoming leads from <b>💬 WhatsApp Webhook</b>, <b>📘 Meta Ads</b>, and <b>📋 Manual &amp; Website Appointments</b>.
     </p>
   </div>
   {% if current_role == 'super_admin' or can('leads_edit') %}
@@ -26,7 +26,7 @@
 <!-- Add Lead Modal Overlay -->
 {% if current_role == 'super_admin' or can('leads_edit') %}
 <div id="add-lead-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
-  <div class="card" style="width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
+  <div class="card" style="width:100%;max-width:580px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
       <h2 style="margin:0;font-size:1.25rem;display:flex;align-items:center;gap:8px">
         <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
@@ -37,8 +37,10 @@
 
     <form method="post" action="/admin/leads/new" class="fgrid">
       {{ csrf_field() }}
-      <div><label>Patient Name *</label><input name="name" required placeholder="Full Name"></div>
-      <div><label>Phone Number</label><input name="phone" placeholder="+91 98765 43210"></div>
+      <div><label>Patient / Prospect Name *</label><input name="name" required placeholder="Full Name"></div>
+      <div><label>Phone Number *</label><input name="phone" required placeholder="+91 98765 43210"></div>
+      <div><label>WhatsApp Number</label><input name="whatsapp" placeholder="+91 98765 43210 (defaults to phone)"></div>
+      <div><label>Email Address</label><input type="email" name="email" placeholder="patient@example.com"></div>
       <div><label>Service / Clinical Type</label>
         <select name="interest">
           {% for t in lead_types %}<option>{{ t }}</option>{% endfor %}
@@ -49,18 +51,17 @@
           {% for s in sources %}<option>{{ s }}</option>{% endfor %}
         </select>
       </div>
+      <div><label>Area / Location</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
+      <div><label>Next Follow-up Date</label><input type="date" name="next_followup" value="{{ today }}"></div>
       {% if staff %}
-      <div><label>Assign to Staff Member</label>
+      <div class="full"><label>Assign to Staff Member</label>
         <select name="assigned_to">
           <option value="">Not assigned</option>
           {% for u in staff %}<option value="{{ u.id }}">{{ u.full_name or u.username }}</option>{% endfor %}
         </select>
       </div>
-      <div><label>Area / Location</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
-      {% else %}
-      <div class="full"><label>Area / Location</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
       {% endif %}
-      <div class="full"><label>Inquiry Details / Note</label>
+      <div class="full"><label>Inquiry Details / Initial Note</label>
         <textarea name="notes" rows="3" placeholder="e.g. Needs above-knee prosthesis after road accident. Wants consultation on Saturday." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
       </div>
       <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
@@ -94,7 +95,7 @@
 </form>
 {% endif %}
 
-<!-- Clean Filter & Search Panel (Inspired by Modern Portal) -->
+<!-- Clean Filter & Search Panel -->
 <div class="card" style="padding:14px 18px;margin-bottom:16px;background:#fff;border-radius:12px">
   <!-- Top Section Filter Pills -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
@@ -115,9 +116,19 @@
   <!-- Status Tabs -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
     <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">STATUS:</span>
-    {% for v,label in [('all','All'),('new','New'),('followup','Follow-up'),('appointment','Appointment'),('hold','Hold'),('lost','Lost')] %}
+    {% for v,label in [
+      ('all','All'),
+      ('new','New'),
+      ('contacted','Contacted'),
+      ('followup','Follow-up Due'),
+      ('appointment','Appointment'),
+      ('assessment','Assessment'),
+      ('converted','Converted'),
+      ('hold','On Hold'),
+      ('lost','Lost')
+    ] %}
     <a class="btn btn-xs {{ 'btn-p' if view==v and not type_f and not q else 'btn-o' }}"
-       href="/admin/leads?section_type={{ section_type }}&view={{ v }}{% if type_f %}&t={{ type_f }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}" style="border-radius:6px">
+       href="/admin/leads?section_type={{ section_type }}&view={{ v }}{% if type_f %}&t={{ type_f }}{% endif %}{% if src_f %}&src={{ src_f }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}" style="border-radius:6px">
       {{ label }} {% if counts[v] and not type_f and not q %}<span class="badge {{ 'badge-w' if view==v else '' }}">{{ counts[v] }}</span>{% endif %}
     </a>
     {% endfor %}
@@ -127,10 +138,22 @@
   <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <input type="hidden" name="section_type" value="{{ section_type }}">
     <input type="hidden" name="view" value="{{ view }}">
-    <div style="flex:2;min-width:220px">
-      <input type="search" name="q" value="{{ q or '' }}" placeholder="🔍 Search patient name, phone, serial #, or message notes..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
+    <div style="flex:2;min-width:200px">
+      <input type="search" name="q" value="{{ q or '' }}" placeholder="🔍 Search prospect name, phone, serial #, or notes..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
     </div>
-    <div style="flex:1;min-width:170px">
+    <div style="flex:1;min-width:140px">
+      <select name="src" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
+        <option value="">All Sources</option>
+        <option value="WhatsApp" {{ 'selected' if src_f|lower=='whatsapp' }}>WhatsApp</option>
+        <option value="Facebook" {{ 'selected' if src_f|lower=='facebook' }}>Facebook</option>
+        <option value="Instagram" {{ 'selected' if src_f|lower=='instagram' }}>Instagram</option>
+        <option value="Website Consultation" {{ 'selected' if src_f=='Website Consultation' }}>Website</option>
+        <option value="Walk-in" {{ 'selected' if src_f=='Walk-in' }}>Walk-in</option>
+        <option value="Phone Call" {{ 'selected' if src_f=='Phone Call' }}>Phone Call</option>
+        <option value="Referral" {{ 'selected' if src_f=='Referral' }}>Referral</option>
+      </select>
+    </div>
+    <div style="flex:1;min-width:150px">
       <select name="t" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
         <option value="">All Types ({{ lead_types|length }})</option>
         {% for t in lead_types %}
@@ -139,7 +162,7 @@
       </select>
     </div>
     {% if not scoped and staff %}
-    <div style="flex:1;min-width:160px">
+    <div style="flex:1;min-width:140px">
       <select name="staff" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
         <option value="">All Staff</option>
         {% for u in staff %}
@@ -149,7 +172,7 @@
     </div>
     {% endif %}
     <button class="btn btn-xs btn-p" type="submit" style="padding:7px 16px;border-radius:8px">Filter</button>
-    {% if q or type_f or staff_filter %}
+    {% if q or type_f or staff_filter or src_f %}
     <a class="btn btn-xs btn-o" href="/admin/leads?section_type={{ section_type }}&view={{ view }}" style="padding:7px 12px;border-radius:8px">Clear</a>
     {% endif %}
   </form>
@@ -175,7 +198,7 @@
   <div style="font-size:2rem;margin-bottom:8px">📭</div>
   <b>No leads found matching your criteria.</b>
   <p style="margin:6px 0 12px;font-size:.88rem">Try changing the status tab, removing filters, or add a new lead above.</p>
-  {% if q or type_f or staff_filter %}
+  {% if q or type_f or staff_filter or src_f %}
   <a class="btn btn-xs btn-o" href="/admin/leads?section_type={{ section_type }}&view={{ view }}">Clear Filters</a>
   {% endif %}
 </div>
@@ -208,12 +231,9 @@
             <span style="background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;font-size:.78rem;padding:2px 8px;border-radius:6px">
               💬 WA-{{ (l.pphone or '')|replace('+','')|replace(' ','') or l.id }}
             </span>
-            {% if l.pid %}
-            <a href="/admin/patients/{{ l.pid }}" style="font-size:1.12rem;font-weight:700;color:var(--dark)">{{ l.pname }}</a>
-            {% else %}
-            <b style="font-size:1.12rem">{{ l.pname or 'WhatsApp Contact' }}</b>
-            {% endif %}
-
+            <a href="/admin/leads/{{ l.id }}" style="font-size:1.15rem;font-weight:700;color:var(--dark);text-decoration:none">
+              {{ l.pname or 'WhatsApp Contact' }}
+            </a>
             {% if l.pphone %}<span class="muted" style="font-weight:600">{{ l.pphone }}</span>{% endif %}
           </div>
 
@@ -224,8 +244,11 @@
             </span>
 
             {% if l.status=='new' %}<span class="tag tag-due">new</span>
+            {% elif l.status=='contacted' %}<span class="tag tag-pen">contacted</span>
             {% elif l.status=='followup' %}<span class="tag tag-pen">follow-up</span>
             {% elif l.status=='appointment' %}<span class="tag tag-ok">appointment</span>
+            {% elif l.status=='assessment' %}<span class="tag tag-pen" style="background:#fef3c7;color:#92400e">assessment</span>
+            {% elif l.status=='converted' %}<span class="tag tag-ok" style="background:#10b981;color:#fff">converted</span>
             {% elif l.status=='hold' %}<span class="tag tag-new">on hold</span>
             {% elif l.status=='lost' %}<span class="tag tag-new">lost</span>{% endif %}
 
@@ -233,6 +256,12 @@
             <span class="tag" style="background:#e0f2fe;color:#0369a1">👤 {{ l.assigned_full_name or l.assigned_name }}</span>
             {% else %}
             <span class="tag" style="background:#f1f5f9;color:#64748b">👤 Not assigned</span>
+            {% endif %}
+
+            {% if l.last_due_date %}
+            <span class="tag {{ 'tag-due' if l.last_due_date <= today else 'tag-pen' }}" style="font-size:.76rem">
+              📅 FU: {{ l.last_due_date|dshort }}
+            </span>
             {% endif %}
           </div>
 
@@ -243,7 +272,7 @@
               <span class="muted" style="margin-left:auto;font-weight:normal">{{ l.created_at[:16] if l.created_at else '' }}</span>
             </div>
             <div style="font-size:.92rem;color:#1e293b;line-height:1.4">
-              "{{ l.notes or l.last_note or 'Patient initiated enquiry via WhatsApp Webhook' }}"
+              "{{ l.last_summary or l.notes or l.last_note or 'Patient initiated enquiry via WhatsApp Webhook' }}"
             </div>
           </div>
 
@@ -251,13 +280,25 @@
           <div class="muted" style="font-size:.8rem;margin-top:4px">
             📅 Received: {{ l.created_at[:16] if l.created_at else '' }}
             {% if l.area %} · 📍 {{ l.area }}{% endif %}
-            {% if l.history_count and l.history_count > 1 %} · 💬 {{ l.history_count }} updates{% endif %}
+            {% if l.history_count and l.history_count > 0 %} · 💬 {{ l.history_count }} interaction(s){% endif %}
           </div>
         </div>
 
         <!-- Actions Column -->
         <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:240px">
-          <!-- Web WhatsApp Direct Response Button -->
+          <!-- Primary Actions -->
+          <div style="display:flex;gap:6px">
+            <a href="/admin/leads/{{ l.id }}" class="btn btn-xs btn-p" style="flex:2;text-align:center;padding:7px 10px;border-radius:8px;font-weight:700;background:#0e7490;border-color:#0891b2">
+              👁️ Open Lead
+            </a>
+            {% if can("leads_edit") %}
+            <a href="/admin/leads/{{ l.id }}/edit" class="btn btn-xs btn-o" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
+              ✏️ Edit
+            </a>
+            {% endif %}
+          </div>
+
+          <!-- Web WhatsApp & Call Buttons -->
           {% set wa = (l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
           {% if wa %}
           {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center regarding " ~ (l.interest or 'your prosthetic / orthotic consultation') ~ ". How can we assist you today?" %}
@@ -271,7 +312,7 @@
           </div>
           {% endif %}
 
-          <!-- Single Lead Staff Assign -->
+          <!-- Staff Assign -->
           {% if not scoped and staff %}
           <form method="post" action="/admin/leads/{{ l.id }}/assign_one" style="display:flex;gap:6px">
             {{ csrf_field() }}
@@ -285,11 +326,25 @@
           </form>
           {% endif %}
 
-          <!-- Outcome Pipeline Conversion Buttons -->
+          <!-- Convert to Patient Button -->
+          {% if l.status != 'converted' and can("leads_edit") %}
+          <form method="post" action="/admin/leads/{{ l.id }}/convert" style="margin:0" data-confirm="Convert {{ l.pname }} into a Confirmed Master Patient?">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-xs btn-p" style="width:100%;background:#0e7490;border-color:#0891b2;padding:6px 10px;border-radius:6px;font-weight:700">
+              👤 Convert to Patient →
+            </button>
+          </form>
+          {% elif l.status == 'converted' and l.pid %}
+          <a href="/admin/patients/{{ l.pid }}" class="btn btn-xs btn-o" style="text-align:center;color:#059669;border-color:#10b981;padding:6px 10px;border-radius:6px;font-weight:700">
+            ✓ Patient #{{ l.serial_no }}
+          </a>
+          {% endif %}
+
+          <!-- Outcome Pipeline Conversion Buttons (Backward Compatible) -->
           {% if can("leads_edit") %}
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/appointment" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appointment</button></form>
+              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appt</button></form>
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:inline">
               {{ csrf_field() }}<input type="hidden" name="due_date" value="{{ today }}">
               <button class="btn btn-xs btn-o">🔁 Follow-up</button></form>
@@ -299,9 +354,8 @@
               {{ csrf_field() }}<button class="btn btn-xs btn-o">✖ Lost</button></form>
           </div>
 
-          <!-- Add Note / Custom Due Date Collapsible -->
           <details style="font-size:.82rem">
-            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note or due date</summary>
+            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note / due date</summary>
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid var(--line)">
               {{ csrf_field() }}
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -352,13 +406,11 @@
         <!-- Main Info -->
         <div style="flex:1;min-width:280px">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            {% if l.pid %}
-            <a href="/admin/patients/{{ l.pid }}" style="font-size:1.12rem;font-weight:700;color:var(--dark)">{{ l.pname }}</a>
-            {% else %}
-            <b style="font-size:1.12rem">{{ l.pname or '—' }}</b>
-            {% endif %}
-
-            {% if l.serial_no %}<span class="tag tag-ok">#{{ l.serial_no }}</span>{% endif %}
+            <a href="/admin/leads/{{ l.id }}" style="font-size:1.15rem;font-weight:700;color:var(--dark);text-decoration:none">
+              {{ l.pname or 'Lead #' ~ l.id }}
+            </a>
+            <span class="tag tag-new" style="font-size:.72rem">LEAD-{{ '%05d'|format(l.id) }}</span>
+            {% if l.serial_no and l.status == 'converted' %}<span class="tag tag-ok">#{{ l.serial_no }}</span>{% endif %}
             {% if l.pphone %}<span class="muted" style="font-weight:600">{{ l.pphone }}</span>{% endif %}
           </div>
 
@@ -371,8 +423,11 @@
             </span>
 
             {% if l.status=='new' %}<span class="tag tag-due">new</span>
+            {% elif l.status=='contacted' %}<span class="tag tag-pen">contacted</span>
             {% elif l.status=='followup' %}<span class="tag tag-pen">follow-up</span>
             {% elif l.status=='appointment' %}<span class="tag tag-ok">appointment</span>
+            {% elif l.status=='assessment' %}<span class="tag tag-pen" style="background:#fef3c7;color:#92400e">assessment</span>
+            {% elif l.status=='converted' %}<span class="tag tag-ok" style="background:#10b981;color:#fff">converted</span>
             {% elif l.status=='hold' %}<span class="tag tag-new">on hold</span>
             {% elif l.status=='lost' %}<span class="tag tag-new">lost</span>{% endif %}
 
@@ -380,6 +435,12 @@
             <span class="tag" style="background:#e0f2fe;color:#0369a1">👤 {{ l.assigned_full_name or l.assigned_name }}</span>
             {% else %}
             <span class="tag" style="background:#f1f5f9;color:#64748b">👤 Not assigned</span>
+            {% endif %}
+
+            {% if l.last_due_date %}
+            <span class="tag {{ 'tag-due' if l.last_due_date <= today else 'tag-pen' }}" style="font-size:.76rem">
+              📅 FU: {{ l.last_due_date|dshort }}
+            </span>
             {% endif %}
           </div>
 
@@ -391,10 +452,10 @@
           {% endif %}
 
           <!-- Latest History Outcome (if any) -->
-          {% if l.last_note or l.last_outcome %}
+          {% if l.last_note or l.last_outcome or l.last_summary %}
           <div style="background:#f8fafc;border-left:3px solid var(--c);padding:5px 10px;border-radius:4px;margin:6px 0;font-size:.83rem">
-            ⚡ <b>Latest:</b> <span class="tag tag-pen" style="font-size:.72rem">{{ l.last_outcome|title }}</span>
-            {{ l.last_note }}
+            ⚡ <b>Latest:</b> <span class="tag tag-pen" style="font-size:.72rem">{{ (l.last_outcome or 'Update')|title }}</span>
+            {{ l.last_summary or l.last_note }}
             {% if l.last_due_date %}<span class="muted">(Due: {{ l.last_due_date|dshort }})</span>{% endif %}
           </div>
           {% endif %}
@@ -403,24 +464,33 @@
           <div class="muted" style="font-size:.8rem;margin-top:4px">
             📅 {{ l.created_at[:10]|dshort if l.created_at else '' }}
             {% if l.area %} · 📍 {{ l.area }}{% endif %}
-            {% if l.history_count and l.history_count > 1 %} · 💬 {{ l.history_count }} updates{% endif %}
+            {% if l.history_count and l.history_count > 0 %} · 💬 {{ l.history_count }} interaction(s){% endif %}
           </div>
         </div>
 
         <!-- Actions Column -->
         <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:240px">
+          <!-- Primary Actions -->
+          <div style="display:flex;gap:6px">
+            <a href="/admin/leads/{{ l.id }}" class="btn btn-xs btn-p" style="flex:2;text-align:center;padding:7px 10px;border-radius:8px;font-weight:700;background:#0e7490;border-color:#0891b2">
+              👁️ Open Lead
+            </a>
+            {% if can("leads_edit") %}
+            <a href="/admin/leads/{{ l.id }}/edit" class="btn btn-xs btn-o" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
+              ✏️ Edit
+            </a>
+            {% endif %}
+          </div>
+
           <!-- Contact Shortcuts -->
           <div style="display:flex;gap:6px">
             {% if l.pphone %}
             <a class="btn btn-xs btn-o" href="tel:{{ l.pphone }}" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">📞 Call</a>
-            {% set wa = (l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
+            {% set wa = (l.pwhatsapp or l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
             {% if wa %}
             {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center. How can we assist you today?" %}
             <a class="btn btn-xs btn-o" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="flex:1;text-align:center;color:#16a34a;border-color:#86efac;background:#f0fdf4;padding:7px 10px;border-radius:8px">💬 WhatsApp</a>
             {% endif %}
-            {% endif %}
-            {% if l.pid %}
-            <a class="btn btn-xs btn-o" href="/admin/patients/{{ l.pid }}" style="text-align:center;padding:7px 10px;border-radius:8px">👤 Patient</a>
             {% endif %}
           </div>
 
@@ -438,11 +508,25 @@
           </form>
           {% endif %}
 
+          <!-- Convert to Patient Button -->
+          {% if l.status != 'converted' and can("leads_edit") %}
+          <form method="post" action="/admin/leads/{{ l.id }}/convert" style="margin:0" data-confirm="Convert {{ l.pname }} into a Confirmed Master Patient?">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-xs btn-p" style="width:100%;background:#0e7490;border-color:#0891b2;padding:6px 10px;border-radius:6px;font-weight:700">
+              👤 Convert to Patient →
+            </button>
+          </form>
+          {% elif l.status == 'converted' and l.pid %}
+          <a href="/admin/patients/{{ l.pid }}" class="btn btn-xs btn-o" style="text-align:center;color:#059669;border-color:#10b981;padding:6px 10px;border-radius:6px;font-weight:700">
+            ✓ Patient #{{ l.serial_no }}
+          </a>
+          {% endif %}
+
           <!-- Direct Outcome Buttons -->
           {% if can("leads_edit") %}
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/appointment" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appointment</button></form>
+              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appt</button></form>
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:inline">
               {{ csrf_field() }}<input type="hidden" name="due_date" value="{{ today }}">
               <button class="btn btn-xs btn-o">🔁 Follow-up</button></form>
@@ -452,9 +536,8 @@
               {{ csrf_field() }}<button class="btn btn-xs btn-o">✖ Lost</button></form>
           </div>
 
-          <!-- Add Note / Custom Date Collapsible -->
           <details style="font-size:.82rem">
-            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note or due date</summary>
+            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note / due date</summary>
             <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid var(--line)">
               {{ csrf_field() }}
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -505,6 +588,43 @@ document.addEventListener("click", function(e) {
 });
 if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
   openAddLeadModal();
+}
+// Bulk selection
+var selectAll = document.getElementById("select-all-leads");
+var selectAllBtn = document.getElementById("select-all-btn");
+var bulkBar = document.getElementById("bulk-bar");
+var selectedCount = document.getElementById("selected-count");
+var leadChks = document.querySelectorAll(".lead-chk");
+
+function updateBulkBar() {
+  var checked = document.querySelectorAll(".lead-chk:checked");
+  if (selectedCount) selectedCount.textContent = checked.length;
+  if (bulkBar) bulkBar.style.display = checked.length > 0 ? "flex" : "none";
+  if (selectAll) selectAll.checked = (checked.length === leadChks.length && leadChks.length > 0);
+}
+
+if (selectAll) {
+  selectAll.addEventListener("change", function() {
+    leadChks.forEach(function(c) { c.checked = selectAll.checked; });
+    updateBulkBar();
+  });
+}
+if (selectAllBtn) {
+  selectAllBtn.addEventListener("click", function() {
+    var anyUnchecked = Array.from(leadChks).some(function(c) { return !c.checked; });
+    leadChks.forEach(function(c) { c.checked = anyUnchecked; });
+    updateBulkBar();
+  });
+}
+leadChks.forEach(function(c) {
+  c.addEventListener("change", updateBulkBar);
+});
+var clearSelBtn = document.getElementById("clear-selection-btn");
+if (clearSelBtn) {
+  clearSelBtn.addEventListener("click", function() {
+    leadChks.forEach(function(c) { c.checked = false; });
+    updateBulkBar();
+  });
 }
 </script>
 

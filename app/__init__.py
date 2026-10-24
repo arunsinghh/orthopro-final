@@ -48,6 +48,7 @@ def create_app(config_name=None):
     app.jinja_env.filters["inr"] = helpers.inr
     app.jinja_env.filters["md"] = helpers.md
     app.jinja_env.filters["dshort"] = helpers.dshort
+    app.jinja_env.filters["dtfmt"] = helpers.dtfmt
     app.jinja_env.globals["product_image"] = helpers.product_image
 
     # ------------------------------------------------ context processors

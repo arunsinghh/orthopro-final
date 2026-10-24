@@ -93,6 +93,26 @@ def dshort(v):
         return v
 
 
+def dtfmt(v):
+    """Format datetime as '14 Oct 2026, 10:15 AM'."""
+    if not v:
+        return "\u2014"
+    try:
+        s = str(v)
+        if "T" in s or "+" in s:
+            clean_s = s.replace("Z", "+00:00")
+            d = dt.datetime.fromisoformat(clean_s)
+            return d.strftime("%d %b %Y, %I:%M %p")
+        elif len(s) >= 19:
+            d = dt.datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+            return d.strftime("%d %b %Y, %I:%M %p")
+        elif len(s) >= 10:
+            return dt.date.fromisoformat(s[:10]).strftime("%d %b %Y")
+        return s
+    except Exception:
+        return str(v)
+
+
 def md(text):
     """Tiny markdown subset: headings, bold, italic, lists, tables, links.
 

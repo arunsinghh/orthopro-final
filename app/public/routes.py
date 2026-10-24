@@ -279,8 +279,8 @@ def contact():
             if not pid:
                 serial = h.next_serial_no()
                 p_rows = db.q("""INSERT INTO patients (name, phone, email, area, source, status,
-                    profile_status, patient_code, serial_no, pipeline_stage, created_at)
-                    VALUES (?,?,?,?, 'Website Consultation', 'active', 'complete', ?, ?, '', ?) RETURNING id""",
+                    profile_status, patient_code, serial_no, pipeline_stage, is_confirmed, created_at)
+                    VALUES (?,?,?,?, 'Website Consultation', 'lead', 'incomplete', ?, ?, '', 0, ?) RETURNING id""",
                     (name, phone, email, area, h.next_patient_code(), serial, h.now()))
                 pid = p_rows[0]["id"] if p_rows else None
 
@@ -305,13 +305,17 @@ def contact():
                 "area": area,
             })
 
-            lead_rows = db.q("""INSERT INTO leads (patient_id, source, platform, status, interest,
+            lead_rows = db.q("""INSERT INTO leads (patient_id, name, phone, email, area, source, platform, status, interest,
                 notes, lead_fields, created_at)
-                VALUES (?,?,?,?, ?, ?, ?, ?) RETURNING id""",
-                (pid, "Website Consultation", "website", "new", interest, notes, lead_fields, h.now()))
+                VALUES (?,?,?,?,?,?,?,?, ?, ?, ?, ?) RETURNING id""",
+                (pid, name, phone, email, area, "Website Consultation", "website", "new", interest, notes, lead_fields, h.now()))
             if lead_rows:
-                record("lead_create", f"id={lead_rows[0]['id']} source=website_booking",
-                       entity_type="lead", entity_id=lead_rows[0]["id"])
+                lid = lead_rows[0]["id"]
+                record("lead_create", f"id={lid} source=website_booking",
+                       entity_type="lead", entity_id=lid)
+                db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, logged_by, interaction_at, created_at)
+                    VALUES (?, 'new', ?, ?, 'other', NULL, ?, ?)""",
+                    (lid, notes, notes, h.now(), h.now()))
 
             flash("Thank you! Your appointment request has been received. "
                   "Our team will call you shortly to confirm.", "ok")

@@ -1,0 +1,10 @@
+{
+  "name": "orthopro-final",
+  "version": "1.0.0",
+  "description": "OrthoPro India Application",
+  "scripts": {
+    "dev": "\"C:\\Users\\aruns\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" run.py",
+    "start": "\"C:\\Users\\aruns\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" run.py"
+  }
+}
+
