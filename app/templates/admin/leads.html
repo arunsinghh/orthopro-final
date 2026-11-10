@@ -241,19 +241,9 @@
 
           <!-- Action Controls -->
           <td data-col="actions" style="text-align:center">
-            <div class="excel-actions-cell" style="justify-content:center">
-              <a href="/admin/leads/{{ l.id }}" class="excel-btn-icon" title="Open Lead Details">👁</a>
-              <a href="/admin/leads/{{ l.id }}/edit" class="excel-btn-icon" title="Edit Lead Form">✏️</a>
-              <button type="button" class="excel-btn-icon" data-view-history="lead" data-id="{{ l.id }}" data-name="{{ pname }}" title="View Conversation / Follow-up History">📜</button>
-              <button type="button" class="excel-btn-icon" onclick="openQuickFollowupModal('{{ l.id }}', '{{ pname }}')" title="Add Follow-up Note">💬</button>
-              {% if pphone %}
-              <a href="tel:{{ pphone|replace(' ','') }}" class="excel-btn-icon" title="Call">📞</a>
-              <a href="https://wa.me/{{ (l.pwhatsapp or pphone)|replace(' ','')|replace('+','') }}?text=Hello%20{{ pname|urlencode }}" target="_blank" rel="noopener" class="excel-btn-icon" style="color:#16a34a" title="WhatsApp">💬</a>
-              {% endif %}
-              {% if l.status != 'converted' %}
-              <button type="button" class="excel-btn-icon excel-btn-convert" data-convert-lead="{{ l.id }}" data-name="{{ pname }}" title="Convert to Confirmed Patient">🔄</button>
-              {% endif %}
-            </div>
+            <a href="/admin/leads/{{ l.id }}" class="btn btn-xs btn-p" style="padding:4px 12px;border-radius:6px;font-size:0.82rem;font-weight:600;text-decoration:none">
+              View Profile
+            </a>
             <!-- Hidden test anchor for outcome compatibility -->
             <div style="display:none">
               <a href="/admin/leads/{{ l.id }}/outcome/appointment">appt</a>

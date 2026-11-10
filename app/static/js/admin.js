@@ -442,6 +442,13 @@
       input.focus();
       if (fieldType === "text") {
         input.select();
+      } else if (fieldType === "select") {
+        input.addEventListener("change", function () {
+          commitEditing(false, false);
+        });
+        try {
+          if (typeof input.showPicker === "function") input.showPicker();
+        } catch (err) {}
       }
 
       input.addEventListener("keydown", function (e) {

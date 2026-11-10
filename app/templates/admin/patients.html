@@ -238,38 +238,9 @@
 
           <!-- Action Buttons -->
           <td data-col="actions" style="text-align:center;white-space:nowrap">
-            <div style="display:inline-flex;gap:4px;align-items:center">
-              <!-- Open Profile -->
-              <a href="/admin/patients/{{ p.id }}" class="excel-btn-icon" title="View Patient Profile">
-                👁
-              </a>
-
-              <!-- Add Follow-up Note -->
-              <button type="button" class="excel-btn-icon" onclick="openPatientFollowupModal('{{ p.id }}', '{{ p.name|e }}')" title="Add Follow-up / Clinical Note">
-                💬
-              </button>
-
-              <!-- View History -->
-              <button type="button" class="excel-btn-icon" data-view-history="patient" data-id="{{ p.id }}" data-name="{{ p.name|e }}" title="View Follow-up History">
-                📜
-              </button>
-
-              <!-- Phone Call -->
-              {% if p.phone %}
-              <a href="tel:{{ p.phone }}" class="excel-btn-icon" title="Call {{ p.phone }}">
-                📞
-              </a>
-
-              <!-- WhatsApp -->
-              {% set wa = (p.phone or '')|replace('+','')|replace(' ','')|replace('-','') %}
-              {% if wa %}
-              {% set wa_text = "Hello " ~ (p.name or '') ~ ", contacting you from OrthoPro Artificial Limbs Center. How can we assist you today?" %}
-              <a href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" target="_blank" rel="noopener" class="excel-btn-icon" title="WhatsApp {{ p.phone }}" style="color:#16a34a">
-                💬
-              </a>
-              {% endif %}
-              {% endif %}
-            </div>
+            <a href="/admin/patients/{{ p.id }}" class="btn btn-xs btn-p" style="padding:4px 12px;border-radius:6px;font-size:0.82rem;font-weight:600;text-decoration:none">
+              View Profile
+            </a>
           </td>
         </tr>
         {% endfor %}
