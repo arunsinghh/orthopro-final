@@ -277,49 +277,6 @@
   </div>
 </div>
 
-<!-- Conversation History Modal -->
-<div id="excel-history-modal" class="excel-modal-overlay" style="display:none">
-  <div class="excel-modal-card">
-    <div class="excel-modal-header">
-      <h3 id="excel-hist-title" style="margin:0;font-size:1.15rem">📜 Follow-up History</h3>
-      <button type="button" id="excel-hist-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8">&times;</button>
-    </div>
-    <div class="excel-modal-body" id="excel-hist-content">
-      <div style="text-align:center;padding:24px;color:#64748b">Loading history…</div>
-    </div>
-  </div>
-</div>
-
-<!-- Quick Patient Follow-up Modal -->
-<div id="patient-followup-modal" class="excel-modal-overlay" style="display:none">
-  <div class="excel-modal-card" style="max-width:480px">
-    <div class="excel-modal-header">
-      <h3 id="pf-title" style="margin:0;font-size:1.15rem">💬 Add Patient Follow-up</h3>
-      <button type="button" onclick="closePatientFollowupModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8">&times;</button>
-    </div>
-    <form method="post" action="/admin/followups/new" class="excel-modal-body">
-      {{ csrf_field() }}
-      <input type="hidden" name="patient_id" id="pf-patient-id" value="">
-      <input type="hidden" name="next" value="{{ request.full_path }}">
-
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:0.83rem;font-weight:600;margin-bottom:4px;color:#334155">Scheduled Due Date</label>
-        <input type="date" name="due_date" value="{{ today }}" class="excel-inline-input" style="width:100%" required>
-      </div>
-
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:0.83rem;font-weight:600;margin-bottom:4px;color:#334155">Follow-up / Clinical Note</label>
-        <textarea name="note" rows="3" placeholder="e.g. Call patient to check socket fit and comfort..." style="width:100%;padding:8px 10px;font-size:0.88rem;border:1px solid #cbd5e1;border-radius:6px;resize:vertical" required></textarea>
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn btn-xs btn-o" onclick="closePatientFollowupModal()">Cancel</button>
-        <button type="submit" class="btn btn-xs btn-p" style="background:#0e7490;border-color:#0e7490">Save Follow-up</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
 function sortTable(col) {
   var url = new URL(window.location.href);
@@ -348,36 +305,15 @@ function closeAddPatientModal() {
   if (modal) modal.style.display = "none";
 }
 
-function openPatientFollowupModal(pid, name) {
-  var modal = document.getElementById("patient-followup-modal");
-  document.getElementById("pf-patient-id").value = pid;
-  document.getElementById("pf-title").textContent = "💬 Add Follow-up — " + (name || ("#" + pid));
-  if (modal) modal.style.display = "flex";
-}
-
-function closePatientFollowupModal() {
-  var modal = document.getElementById("patient-followup-modal");
-  if (modal) modal.style.display = "none";
-}
-
 document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") {
     closeAddPatientModal();
-    closePatientFollowupModal();
-    var hist = document.getElementById("excel-history-modal");
-    if (hist) hist.style.display = "none";
   }
 });
 
 document.addEventListener("click", function(e) {
   var addModal = document.getElementById("add-patient-modal");
   if (addModal && e.target === addModal) closeAddPatientModal();
-
-  var pfModal = document.getElementById("patient-followup-modal");
-  if (pfModal && e.target === pfModal) closePatientFollowupModal();
-
-  var histModal = document.getElementById("excel-history-modal");
-  if (histModal && e.target === histModal) histModal.style.display = "none";
 });
 
 if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
