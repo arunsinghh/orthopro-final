@@ -4,40 +4,54 @@
   <div class="wrap">
     <div class="crumb"><a href="/">Home</a> › Contact</div>
     <h1>Book Your Free Consultation</h1>
-    <p>Fill the form and our team will call you back within working hours — or call / WhatsApp us right now.</p>
+    <p>Fill the form to connect directly with our specialist on WhatsApp — or call us right now.</p>
   </div>
 </div>
 <section>
   <div class="wrap split" style="align-items:start">
     <div class="card">
-      <h3>Request an Appointment</h3>
-      <form class="labeled" method="post">
-  {{ csrf_field() }}
+      <h3 style="display:flex;align-items:center;gap:8px">
+        <span style="color:#16a34a">💬</span>
+        <span>Request Appointment via WhatsApp</span>
+      </h3>
+      <p class="muted" style="font-size:0.88rem;margin:0 0 16px">
+        Submit the form below and it will open directly in WhatsApp with your consultation details ready to send.
+      </p>
+
+      <form id="contact-form" class="labeled" method="post" action="/contact">
+        {{ csrf_field() }}
         <div class="form-grid">
-          <div><label for="cname">Full Name *</label><input id="cname" name="name" required></div>
-          <div><label for="cphone">Phone Number *</label><input id="cphone" name="phone" required placeholder="+91"></div>
-          <div><label for="cemail">Email (optional)</label><input id="cemail" name="email" type="email"></div>
+          <div><label for="cname">Full Name *</label><input id="cname" name="name" required placeholder="Your full name"></div>
+          <div><label for="cphone">Phone Number *</label><input id="cphone" name="phone" required placeholder="+91 98765 43210"></div>
+          <div><label for="cemail">Email (optional)</label><input id="cemail" name="email" type="email" placeholder="name@example.com"></div>
           <div><label for="carea">Your Area / City</label><input id="carea" name="area" placeholder="e.g. Malviya Nagar, Delhi"></div>
           <div><label for="csvc">Service Needed</label>
             <select id="csvc" name="service">
-              <option value="">— Select —</option>
+              <option value="">— Select Service —</option>
               {% for s in services %}<option>{{ s.name }}</option>{% endfor %}
-            </select></div>
+            </select>
+          </div>
           <div><label for="cdate">Preferred Date</label><input id="cdate" name="preferred_date" type="date"></div>
           <div class="full"><label for="cmsg">Tell Us About Your Condition</label>
-            <textarea id="cmsg" name="message" rows="4" placeholder="e.g. Below-knee amputation 3 months ago, looking for a prosthetic leg…"></textarea></div>
+            <textarea id="cmsg" name="message" rows="4" placeholder="e.g. Below-knee amputation 3 months ago, looking for a prosthetic leg…"></textarea>
+          </div>
         </div>
-        <p style="margin-top:18px"><button class="btn btn-primary">Submit Request</button></p>
+        <p style="margin-top:18px">
+          <button type="submit" class="btn btn-primary" style="background:#16a34a;border-color:#15803d;padding:10px 22px;display:inline-flex;align-items:center;gap:8px;font-size:0.95rem;font-weight:700;border-radius:8px">
+            <span style="font-size:1.15rem">💬</span>
+            <span>Send via WhatsApp</span>
+          </button>
+        </p>
       </form>
     </div>
     <div>
       <div class="card">
         <h3>📞 Contact Details</h3>
-        <p><b>Phone:</b> <a href="tel:{{ settings.phone.replace(' ','') }}">{{ settings.phone }}</a></p>
+        <p><b>Phone:</b> <a href="tel:{{ (settings.phone or '8130546090') | replace(' ','') }}">{{ settings.phone or '+91 81305 46090' }}</a></p>
         <p><b>WhatsApp:</b> <a href="https://wa.me/{{ settings.whatsapp or '918130546090' }}?text=Hello%20OrthoPro%20India%2C%20I%20want%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener">+91 81305 46090 (Chat with us)</a></p>
-        <p><b>Email:</b> {{ settings.email }}</p>
+        <p><b>Email:</b> {{ settings.email or 'orthopro.india@gmail.com' }}</p>
         <p><b>Address:</b> {{ settings.address }}</p>
-        <p><b>Timings:</b> {{ settings.hours }}</p>
+        <p><b>Timings:</b> {{ settings.hours or 'Mon – Sat: 10:00 AM – 7:00 PM' }}</p>
         <p style="margin-top:10px"><a href="{{ settings.map_url }}" class="btn btn-outline btn-sm" rel="noopener">📍 Get Directions</a></p>
       </div>
       <div class="card" style="margin-top:18px;background:var(--cl);border:0">
@@ -52,4 +66,40 @@
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("contact-form");
+  if (!form) return;
+
+  form.addEventListener("submit", function (e) {
+    var name = (document.getElementById("cname").value || "").trim();
+    var phone = (document.getElementById("cphone").value || "").trim();
+    if (!name || !phone) return;
+
+    e.preventDefault();
+    var area = (document.getElementById("carea").value || "").trim();
+    var svc = (document.getElementById("csvc").value || "").trim();
+    var date = (document.getElementById("cdate").value || "").trim();
+    var email = (document.getElementById("cemail").value || "").trim();
+    var msg = (document.getElementById("cmsg").value || "").trim();
+
+    var lines = ["Hello OrthoPro India, I would like to book a consultation:"];
+    lines.push("• Name: " + name);
+    lines.push("• Phone: " + phone);
+    if (area) lines.push("• Area/City: " + area);
+    if (svc) lines.push("• Service Needed: " + svc);
+    if (date) lines.push("• Preferred Date: " + date);
+    if (email) lines.push("• Email: " + email);
+    if (msg) lines.push("• Condition / Note: " + msg);
+
+    var rawNum = "{{ (settings.whatsapp or '918130546090') | replace('+','') | replace(' ','') | replace('-','') }}";
+    if (!rawNum.startsWith("91") && rawNum.length === 10) rawNum = "91" + rawNum;
+    if (!rawNum) rawNum = "918130546090";
+
+    var waUrl = "https://api.whatsapp.com/send?phone=" + encodeURIComponent(rawNum) + "&text=" + encodeURIComponent(lines.join("\n"));
+    window.location.href = waUrl;
+  });
+});
+</script>
 {% endblock %}

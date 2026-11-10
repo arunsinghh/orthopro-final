@@ -1,3 +1,5 @@
+import urllib.parse
+import re
 """Public website routes. URLs, titles, meta and structured data are
 deliberately unchanged from the original site to preserve SEO."""
 import json
@@ -257,69 +259,40 @@ def contact():
         phone = request.form.get("phone", "").strip()
         if not name or not phone:
             flash("Please enter your name and phone number.", "err")
-        else:
-            email = request.form.get("email", "").strip()
-            area = request.form.get("area", "").strip()
-            service = request.form.get("service", "").strip()
-            preferred_date = request.form.get("preferred_date") or None
-            message = request.form.get("message", "").strip()
-
-            # 1. Maintain appointment table row
-            db.q("""INSERT INTO appointments (name, phone, email, area, service, preferred_date,
-                 message, status, created_at) VALUES (?,?,?,?,?,?,?, 'new', ?)""",
-                 (name, phone, email, area, service, preferred_date, message, h.now()))
-
-            # 2. Find or create Master Patient (preventing duplicates)
-            pid = None
-            if phone:
-                norm = phone.replace(" ", "").replace("+", "").replace("-", "").strip()
-                p = db.q("""SELECT id FROM patients
-                    WHERE REPLACE(REPLACE(REPLACE(phone,' ',''),'+',''),'-','')=?""", (norm,), one=True)
-                pid = p["id"] if p else None
-            if not pid:
-                serial = h.next_serial_no()
-                p_rows = db.q("""INSERT INTO patients (name, phone, email, area, source, status,
-                    profile_status, patient_code, serial_no, pipeline_stage, is_confirmed, created_at)
-                    VALUES (?,?,?,?, 'Website Consultation', 'lead', 'incomplete', ?, ?, '', 0, ?) RETURNING id""",
-                    (name, phone, email, area, h.next_patient_code(), serial, h.now()))
-                pid = p_rows[0]["id"] if p_rows else None
-
-            # 3. Create Lead in leads table so it immediately appears in Admin Leads
-            interest = service or h.detect_lead_type(message)
-            note_parts = []
-            if service:
-                note_parts.append(f"Service: {service}")
-            if preferred_date:
-                note_parts.append(f"Preferred Date: {preferred_date}")
-            if area:
-                note_parts.append(f"Area: {area}")
-            if message:
-                note_parts.append(f"Message: {message}")
-            notes = " | ".join(note_parts) or "Website consultation booking request"
-
-            lead_fields = json.dumps({
-                "service": service,
-                "preferred_date": str(preferred_date or ""),
-                "message": message,
-                "email": email,
-                "area": area,
-            })
-
-            lead_rows = db.q("""INSERT INTO leads (patient_id, name, phone, email, area, source, platform, status, interest,
-                notes, lead_fields, created_at)
-                VALUES (?,?,?,?,?,?,?,?, ?, ?, ?, ?) RETURNING id""",
-                (pid, name, phone, email, area, "Website Consultation", "website", "new", interest, notes, lead_fields, h.now()))
-            if lead_rows:
-                lid = lead_rows[0]["id"]
-                record("lead_create", f"id={lid} source=website_booking",
-                       entity_type="lead", entity_id=lid)
-                db.q("""INSERT INTO lead_history (lead_id, outcome, note, summary, interaction_type, logged_by, interaction_at, created_at)
-                    VALUES (?, 'new', ?, ?, 'other', NULL, ?, ?)""",
-                    (lid, notes, notes, h.now(), h.now()))
-
-            flash("Thank you! Your appointment request has been received. "
-                  "Our team will call you shortly to confirm.", "ok")
             return redirect(url_for("public.contact"))
+
+        email = request.form.get("email", "").strip()
+        area = request.form.get("area", "").strip()
+        service = request.form.get("service", "").strip()
+        preferred_date = request.form.get("preferred_date", "").strip()
+        message = request.form.get("message", "").strip()
+
+        # Format message directly for WhatsApp (does NOT create leads/patients in admin page)
+        msg_lines = [
+            "Hello OrthoPro India, I would like to book a consultation:",
+            f"• Name: {name}",
+            f"• Phone: {phone}"
+        ]
+        if area:
+            msg_lines.append(f"• Area/City: {area}")
+        if service:
+            msg_lines.append(f"• Service: {service}")
+        if preferred_date:
+            msg_lines.append(f"• Preferred Date: {preferred_date}")
+        if email:
+            msg_lines.append(f"• Email: {email}")
+        if message:
+            msg_lines.append(f"• Condition / Note: {message}")
+
+        wa_text = "\n".join(msg_lines)
+        wa_row = db.q("SELECT value FROM settings WHERE key='whatsapp'", one=True)
+        wa_num = (wa_row["value"] if wa_row and wa_row.get("value") else "918130546090")
+        wa_num = re.sub(r"[^0-9]", "", wa_num)
+        if not wa_num.startswith("91") and len(wa_num) == 10:
+            wa_num = "91" + wa_num
+
+        wa_url = f"https://api.whatsapp.com/send?phone={wa_num}&text={urllib.parse.quote(wa_text)}"
+        return redirect(wa_url)
     services = db.q("SELECT name FROM services ORDER BY sort")
     meta = h.page_meta(
         "Book Appointment \u2013 Free Prosthetic & Orthotic Consultation Delhi",

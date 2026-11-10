@@ -163,11 +163,9 @@ def test_404(client):
 
 
 def test_contact_form_inserts(client):
-    rv = client.post("/contact", data={"name": "X", "phone": "999"}, follow_redirects=True)
-    assert rv.status_code == 200
-    row = dblib.q("SELECT COUNT(*) c FROM appointments WHERE phone='999'", one=True)
-    assert row["c"] == 1
-
+    rv = client.post("/contact", data={"name": "X", "phone": "999"})
+    assert rv.status_code == 302
+    assert "api.whatsapp.com" in rv.headers.get("Location", "")
 
 def test_review_needs_csrf_in_real_mode(app):
     # Build a CSRF-enforced client to prove forms are actually protected.
