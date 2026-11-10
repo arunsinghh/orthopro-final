@@ -1,26 +1,395 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}Leads{% endblock %}
-{% set type_colors = {'Lower Limb (Leg)':'#0e7490','Upper Limb (Hand/Arm)':'#2563eb',
-  'Braces & Orthotics':'#7c3aed','Diabetic Foot Care':'#d97706',
-  'Wheelchair & Mobility':'#0f766e','Repair / Service':'#64748b','Other':'#64748b'} %}
-{% block content %}
-{% set section_type = section_type or 'all' %}
+{% block title %}Leads (Spreadsheet){% endblock %}
 
-<div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-  <div>
-    <h1 style="margin:0">{{ "📞 My Leads" if scoped else "📞 Leads" }}</h1>
-    <p class="muted" style="margin:4px 0 0">
-      Manage and respond to incoming leads from <b>💬 WhatsApp Webhook</b>, <b>📘 Meta Ads</b>, and <b>📋 Manual &amp; Website Appointments</b>.
-    </p>
+{% block content %}
+<div class="excel-view-container">
+  <!-- Top Bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="margin:0;font-size:1.45rem;display:flex;align-items:center;gap:10px">
+        <span>📊 {{ "My Leads" if scoped else "Leads" }}</span>
+        <span class="badge badge-w" style="font-size:.85rem;background:#0e7490;color:#fff">{{ total_count }}</span>
+      </h1>
+      <p class="muted" style="margin:3px 0 0;font-size:.85rem">
+        Spreadsheet view: click any cell to edit directly. Tab to navigate, Enter to save.
+      </p>
+    </div>
+    {% if current_role == 'super_admin' or can('leads_edit') %}
+    <div style="display:flex;gap:8px;align-items:center">
+      <button type="button" data-open-modal="add-lead-modal" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;padding:8px 16px;border-radius:8px;font-size:.88rem">
+        <b>➕ Add Lead</b>
+      </button>
+    </div>
+    {% endif %}
   </div>
-  {% if current_role == 'super_admin' or can('leads_edit') %}
-  <div>
-    <button type="button" data-open-modal="add-lead-modal" onclick="openAddLeadModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
-      <span style="font-size:1.1rem;font-weight:700">➕</span>
-      <span>Add Lead</span>
-    </button>
+
+  <!-- Excel Toolbar (Search, Filter, Rows, Columns) -->
+  <div class="excel-toolbar">
+    <!-- Search Form -->
+    <form method="get" action="/admin/leads" class="excel-toolbar-group" style="flex:1;min-width:260px">
+      {% if view and view != 'all' %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
+      {% if src_f %}<input type="hidden" name="src" value="{{ src_f }}">{% endif %}
+      {% if type_f %}<input type="hidden" name="t" value="{{ type_f }}">{% endif %}
+      {% if staff_filter %}<input type="hidden" name="staff" value="{{ staff_filter }}">{% endif %}
+      {% if limit %}<input type="hidden" name="limit" value="{{ limit_arg }}">{% endif %}
+      {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+      {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+
+      <div class="excel-search-box" style="flex:1">
+        <span class="excel-search-icon">🔍</span>
+        <input type="search" name="q" value="{{ q }}" placeholder="Search Lead ID, Name, Phone, Area..." autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-xs btn-p" style="padding:7px 14px">Search</button>
+      {% if q or src_f or type_f or staff_filter or (view and view != 'all') %}
+      <a href="/admin/leads?limit={{ limit_arg }}" class="btn btn-xs btn-o" style="padding:7px 10px">Clear</a>
+      {% endif %}
+    </form>
+
+    <!-- Filters and Display Options -->
+    <div class="excel-toolbar-group">
+      <!-- Source Filter -->
+      <form method="get" action="/admin/leads" style="display:inline-flex;margin:0">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="view" value="{{ view }}">
+        <input type="hidden" name="limit" value="{{ limit_arg }}">
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+        <select name="src" class="excel-select-sm" onchange="this.form.submit()" title="Filter by Lead Source">
+          <option value="">All Sources</option>
+          <option value="WhatsApp" {{ 'selected' if src_f|lower == 'whatsapp' }}>💬 WhatsApp</option>
+          <option value="Facebook" {{ 'selected' if src_f|lower == 'facebook' }}>📘 Meta / Facebook</option>
+          <option value="Instagram" {{ 'selected' if src_f|lower == 'instagram' }}>📷 Instagram</option>
+          <option value="Website Consultation" {{ 'selected' if src_f == 'Website Consultation' }}>🌐 Website Booking</option>
+          <option value="Walk-in" {{ 'selected' if src_f == 'Walk-in' }}>🚶 Walk-in</option>
+          <option value="Phone Call" {{ 'selected' if src_f == 'Phone Call' }}>📞 Phone Call</option>
+          {% for s in sources %}{% if s not in ['WhatsApp','Facebook','Instagram','Website Consultation','Walk-in','Phone Call'] %}
+          <option value="{{ s }}" {{ 'selected' if src_f == s }}>{{ s }}</option>
+          {% endif %}{% endfor %}
+        </select>
+      </form>
+
+      <!-- Staff Filter -->
+      {% if staff and not scoped %}
+      <form method="get" action="/admin/leads" style="display:inline-flex;margin:0">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="view" value="{{ view }}">
+        <input type="hidden" name="src" value="{{ src_f }}">
+        <input type="hidden" name="limit" value="{{ limit_arg }}">
+        <select name="staff" class="excel-select-sm" onchange="this.form.submit()" title="Filter by Staff">
+          <option value="">All Staff</option>
+          {% for u in staff %}
+          <option value="{{ u.id }}" {{ 'selected' if staff_filter == u.id|string }}>{{ u.full_name or u.username }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+
+      <!-- Rows Per Page -->
+      <form method="get" action="/admin/leads" style="display:inline-flex;align-items:center;gap:4px;margin:0">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="view" value="{{ view }}">
+        <input type="hidden" name="src" value="{{ src_f }}">
+        {% if staff_filter %}<input type="hidden" name="staff" value="{{ staff_filter }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+        <span class="muted" style="font-size:0.8rem">Rows:</span>
+        <select name="limit" class="excel-select-sm" onchange="this.form.submit()" title="Rows per page">
+          <option value="10" {{ 'selected' if limit_arg == '10' }}>10</option>
+          <option value="25" {{ 'selected' if limit_arg == '25' }}>25</option>
+          <option value="50" {{ 'selected' if limit_arg == '50' or not limit_arg }}>50</option>
+          <option value="100" {{ 'selected' if limit_arg == '100' }}>100</option>
+          <option value="200" {{ 'selected' if limit_arg == '200' }}>200</option>
+          <option value="all" {{ 'selected' if limit_arg == 'all' }}>All</option>
+        </select>
+      </form>
+
+      <!-- Column Visibility Toggle -->
+      <div class="excel-dropdown" id="col-toggle-dropdown">
+        <button type="button" class="btn btn-xs btn-o" id="col-toggle-btn" style="padding:7px 11px">
+          👁 Columns ▾
+        </button>
+        <div class="excel-dropdown-menu" id="col-toggle-menu">
+          <div style="font-weight:700;font-size:0.78rem;color:#475569;margin-bottom:6px;text-transform:uppercase">Visible Columns</div>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="id" checked> Lead ID</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="name" checked> Name</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="phone" checked> Phone</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="area" checked> Location</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="source" checked> Source</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="service" checked> Service</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="status" checked> Status</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="staff" checked> Assigned Staff</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="last_contact" checked> Last Follow-up</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="next_followup" checked> Next Follow-up</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="actions" checked> Actions</label>
+        </div>
+      </div>
+    </div>
   </div>
-  {% endif %}
+
+  <!-- Channel Filter Pills -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:8px 14px;border:1px solid var(--line);border-radius:8px">
+    <span class="muted" style="font-size:0.78rem;font-weight:700;margin-right:4px">CHANNELS:</span>
+    <a href="/admin/leads?section_type=all&view={{ view }}&q={{ q }}&src={{ src_f }}&staff={{ staff_filter }}&limit={{ limit_arg }}"
+       class="btn btn-xs {{ 'btn-p' if (not section_type or section_type == 'all') else 'btn-o' }}" style="border-radius:99px;padding:3px 10px;font-size:0.8rem">
+      All Channels
+    </a>
+    <a href="/admin/leads?section_type=whatsapp&view={{ view }}&q={{ q }}&src={{ src_f }}&staff={{ staff_filter }}&limit={{ limit_arg }}"
+       class="btn btn-xs {{ 'btn-p' if section_type == 'whatsapp' else 'btn-o' }}" style="border-radius:99px;padding:3px 10px;font-size:0.8rem;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if section_type == 'whatsapp' else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}">
+      💬 WhatsApp Leads
+    </a>
+    <a href="/admin/leads?section_type=manual&view={{ view }}&q={{ q }}&src={{ src_f }}&staff={{ staff_filter }}&limit={{ limit_arg }}"
+       class="btn btn-xs {{ 'btn-p' if section_type == 'manual' else 'btn-o' }}" style="border-radius:99px;padding:3px 10px;font-size:0.8rem;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if section_type == 'manual' else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}">
+      📝 Manual / Website &amp; Appointment Leads
+    </a>
+  </div>
+
+  <!-- Status Tabs -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff;padding:8px 14px;border:1px solid var(--line);border-radius:8px">
+    <span class="muted" style="font-size:0.78rem;font-weight:700;margin-right:4px">STATUS:</span>
+    {% set tabs = [
+      ('all', 'All Leads', counts.all, '#475569'),
+      ('new', 'New', counts.new, '#f97316'),
+      ('contacted', 'Contacted', counts.contacted, '#2563eb'),
+      ('followup', 'Follow-up Due', counts.followup, '#ea580c'),
+      ('appointment', 'Appointment', counts.appointment, '#0e7490'),
+      ('assessment', 'Assessment', counts.assessment, '#7c3aed'),
+      ('converted', 'Converted', counts.converted, '#16a34a'),
+      ('lost', 'Lost', counts.lost, '#94a3b8')
+    ] %}
+    {% for tid, tlabel, tcnt, tcol in tabs %}
+    <a href="/admin/leads?view={{ tid }}&q={{ q }}&src={{ src_f }}&staff={{ staff_filter }}&limit={{ limit_arg }}"
+       class="btn btn-xs {{ 'btn-p' if view == tid else 'btn-o' }}"
+       style="border-radius:99px;padding:3px 10px;font-size:0.8rem;{{ 'background:' ~ tcol ~ ';border-color:' ~ tcol ~ ';color:#fff' if view == tid else '' }}">
+      {{ tlabel }} <span class="badge" style="{{ 'background:#fff;color:' ~ tcol if view == tid else '' }}">{{ tcnt }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Bulk Actions Bar (Shown when 1+ rows selected) -->
+  <div id="excel-bulk-bar" style="display:none;align-items:center;gap:12px;background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 10px 20px -5px rgba(0,0,0,0.3);position:sticky;top:10px;z-index:30;flex-wrap:wrap">
+    <div>
+      <span id="excel-selected-count" style="background:#0284c7;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;font-size:0.8rem">0</span>
+      <span style="font-size:0.88rem;margin-left:4px">leads selected</span>
+    </div>
+
+    <!-- Bulk Staff Assign -->
+    {% if staff and not scoped %}
+    <form id="bulk-assign-form" method="post" action="/admin/leads/assign" style="display:inline-flex;gap:6px;align-items:center;margin:0">
+      {{ csrf_field() }}
+      <div id="bulk-assign-lead-ids"></div>
+      <select name="assigned_to" style="width:auto;padding:5px 8px;font-size:0.82rem;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:6px">
+        <option value="">Assign staff…</option>
+        {% for u in staff %}<option value="{{ u.id }}">{{ u.full_name or u.username }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-xs btn-p" onclick="syncBulkIds('bulk-assign-lead-ids')">Assign</button>
+    </form>
+    {% endif %}
+
+    <!-- Bulk Status Change -->
+    <form id="bulk-status-form" method="post" action="/admin/leads/bulk-status" style="display:inline-flex;gap:6px;align-items:center;margin:0">
+      {{ csrf_field() }}
+      <div id="bulk-status-lead-ids"></div>
+      <select name="status" style="width:auto;padding:5px 8px;font-size:0.82rem;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:6px">
+        <option value="">Change status…</option>
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="followup">Follow-up</option>
+        <option value="appointment">Appointment</option>
+        <option value="assessment">Assessment</option>
+        <option value="hold">On Hold</option>
+        <option value="lost">Lost</option>
+      </select>
+      <button type="submit" class="btn btn-xs btn-p" onclick="syncBulkIds('bulk-status-lead-ids')">Update Status</button>
+    </form>
+
+    <button type="button" class="btn btn-xs btn-o" id="excel-clear-selection" style="margin-left:auto;background:transparent;color:#94a3b8;border-color:#475569">✕ Clear</button>
+  </div>
+
+  <!-- Excel Spreadsheet Table Wrap -->
+  <div class="excel-grid-wrap">
+    <table class="excel-grid" id="leads-excel-grid">
+      <thead>
+        <tr>
+          <th class="excel-col-chk excel-sticky-col no-sort">
+            <input type="checkbox" class="excel-select-all-chk" id="select-all-leads" title="Select all rows">
+          </th>
+          <th data-col="id" class="excel-sticky-col {{ 'sort-active' if sort == 'id' }}" onclick="sortTable('id')">
+            Lead ID <span class="excel-sort-arrow">{{ '▲' if sort == 'id' and order == 'asc' else ('▼' if sort == 'id' else '') }}</span>
+          </th>
+          <th data-col="name" class="{{ 'sort-active' if sort == 'name' }}" onclick="sortTable('name')">
+            Name <span class="excel-sort-arrow">{{ '▲' if sort == 'name' and order == 'asc' else ('▼' if sort == 'name' else '') }}</span>
+          </th>
+          <th data-col="phone" class="{{ 'sort-active' if sort == 'phone' }}" onclick="sortTable('phone')">
+            Phone <span class="excel-sort-arrow">{{ '▲' if sort == 'phone' and order == 'asc' else ('▼' if sort == 'phone' else '') }}</span>
+          </th>
+          <th data-col="area" class="{{ 'sort-active' if sort == 'area' }}" onclick="sortTable('area')">
+            Location <span class="excel-sort-arrow">{{ '▲' if sort == 'area' and order == 'asc' else ('▼' if sort == 'area' else '') }}</span>
+          </th>
+          <th data-col="source" class="{{ 'sort-active' if sort == 'source' }}" onclick="sortTable('source')">
+            Source <span class="excel-sort-arrow">{{ '▲' if sort == 'source' and order == 'asc' else ('▼' if sort == 'source' else '') }}</span>
+          </th>
+          <th data-col="service" class="{{ 'sort-active' if sort == 'interest' }}" onclick="sortTable('interest')">
+            Service <span class="excel-sort-arrow">{{ '▲' if sort == 'interest' and order == 'asc' else ('▼' if sort == 'interest' else '') }}</span>
+          </th>
+          <th data-col="status" class="{{ 'sort-active' if sort == 'status' }}" onclick="sortTable('status')">
+            Status <span class="excel-sort-arrow">{{ '▲' if sort == 'status' and order == 'asc' else ('▼' if sort == 'status' else '') }}</span>
+          </th>
+          <th data-col="staff" class="{{ 'sort-active' if sort == 'assigned_to' }}" onclick="sortTable('assigned_to')">
+            Assigned Staff <span class="excel-sort-arrow">{{ '▲' if sort == 'assigned_to' and order == 'asc' else ('▼' if sort == 'assigned_to' else '') }}</span>
+          </th>
+          <th data-col="last_contact" class="{{ 'sort-active' if sort == 'last_contact' }}" onclick="sortTable('last_contact')">
+            Last Follow-up <span class="excel-sort-arrow">{{ '▲' if sort == 'last_contact' and order == 'asc' else ('▼' if sort == 'last_contact' else '') }}</span>
+          </th>
+          <th data-col="next_followup" class="{{ 'sort-active' if sort == 'next_followup' }}" onclick="sortTable('next_followup')">
+            Next Follow-up <span class="excel-sort-arrow">{{ '▲' if sort == 'next_followup' and order == 'asc' else ('▼' if sort == 'next_followup' else '') }}</span>
+          </th>
+          <th data-col="actions" class="no-sort" style="text-align:center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if rows %}
+        {% for l in rows %}
+        {% set pid = l.pid %}
+        {% set pname = l.pname %}
+        {% set pphone = l.pphone %}
+        <tr class="excel-row" id="lead-row-{{ l.id }}" data-lead-id="{{ l.id }}">
+          <!-- Checkbox -->
+          <td class="excel-col-chk excel-sticky-col">
+            <input type="checkbox" class="excel-row-chk lead-chk" value="{{ l.id }}">
+          </td>
+
+          <!-- Lead ID -->
+          <td data-col="id" class="excel-sticky-col" style="font-weight:700;color:#0e7490">
+            <a href="/admin/leads/{{ l.id }}" style="color:inherit;text-decoration:none">#{{ l.id }}</a>
+          </td>
+
+          <!-- Name (Inline Editable) -->
+          <td data-col="name" class="excel-cell-editable" data-id="{{ l.id }}" data-field="name" data-type="text" data-value="{{ pname }}" title="Click to edit name">
+            <b>{{ pname or '—' }}</b>
+            {% if l.notes %}<div class="muted" style="font-size:0.75rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ l.notes }}">{{ l.notes }}</div>{% endif %}
+          </td>
+
+          <!-- Phone (Inline Editable) -->
+          <td data-col="phone" class="excel-cell-editable" data-id="{{ l.id }}" data-field="phone" data-type="text" data-value="{{ pphone }}" title="Click to edit phone">
+            {{ pphone or '—' }}
+          </td>
+
+          <!-- Location / Area (Inline Editable) -->
+          <td data-col="area" class="excel-cell-editable" data-id="{{ l.id }}" data-field="area" data-type="text" data-value="{{ l.area or '' }}" title="Click to edit location">
+            {{ l.area or '—' }}
+          </td>
+
+          <!-- Source (Inline Editable Dropdown) -->
+          {% set src_options = ['Walk-in', 'WhatsApp', 'Website Consultation', 'Meta Ads', 'Facebook', 'Instagram', 'Phone Call', 'Referral', 'Other'] %}
+          <td data-col="source" class="excel-cell-editable" data-id="{{ l.id }}" data-field="source" data-type="select" data-options='{{ src_options|tojson }}' data-value="{{ l.source or 'Walk-in' }}" title="Click to change source">
+            {{ l.badge or l.source or 'Walk-in' }}
+          </td>
+
+          <!-- Service / Interest (Inline Editable Dropdown) -->
+          <td data-col="service" class="excel-cell-editable" data-id="{{ l.id }}" data-field="interest" data-type="select" data-options='{{ lead_types|tojson }}' data-value="{{ l.interest or '' }}" title="Click to change clinical service">
+            {{ l.interest or '—' }}
+          </td>
+
+          <!-- Status (Inline Editable Dropdown) -->
+          {% set status_options = ['new', 'contacted', 'followup', 'appointment', 'assessment', 'converted', 'hold', 'lost'] %}
+          {% set status_colors = {'new':'#ea580c','contacted':'#2563eb','followup':'#d97706','appointment':'#0e7490','assessment':'#7c3aed','converted':'#16a34a','hold':'#64748b','lost':'#94a3b8'} %}
+          <td data-col="status" class="excel-cell-editable" data-id="{{ l.id }}" data-field="status" data-type="select" data-options='{{ status_options|tojson }}' data-value="{{ l.status }}" title="Click to change status">
+            <span class="excel-status-badge" style="background:{{ status_colors.get(l.status, '#64748b') }}15;color:{{ status_colors.get(l.status, '#64748b') }};border:1px solid {{ status_colors.get(l.status, '#64748b') }}30">
+              {{ l.status }}
+            </span>
+          </td>
+
+          <!-- Assigned Staff (Inline Editable Dropdown) -->
+          {% set staff_opts = [{'id': 0, 'name': 'Unassigned'}] %}
+          {% for u in staff %}
+            {% set _ = staff_opts.append({'id': u.id, 'name': (u.full_name or u.username)}) %}
+          {% endfor %}
+          <td data-col="staff" class="excel-cell-editable" data-id="{{ l.id }}" data-field="assigned_to" data-type="select" data-options='{{ staff_opts|tojson }}' data-value="{{ l.assigned_to or 0 }}" title="Click to assign staff">
+            {{ l.assigned_full_name or l.assigned_name or 'Unassigned' }}
+          </td>
+
+          <!-- Last Follow-up (Read-only date/summary) -->
+          <td data-col="last_contact" title="{{ l.last_summary or l.last_note or '' }}">
+            {% if l.last_contact_at %}
+              <span>{{ l.last_contact_at[:10]|dshort }}</span>
+              {% if l.last_outcome %}<span class="muted" style="font-size:0.75rem">({{ l.last_outcome }})</span>{% endif %}
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Next Follow-up (Inline Editable Date) -->
+          <td data-col="next_followup" class="excel-cell-editable" data-id="{{ l.id }}" data-field="next_followup" data-type="date" data-value="{{ (l.next_followup or l.last_due_date or '')[:10] }}" title="Click to change follow-up date">
+            {% if l.next_followup or l.last_due_date %}
+              {% set nxt = (l.next_followup or l.last_due_date)[:10] %}
+              <span style="{{ 'color:#dc2626;font-weight:700' if nxt <= today else 'color:#0e7490' }}">
+                📅 {{ nxt|dshort }}
+              </span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Action Controls -->
+          <td data-col="actions" style="text-align:center">
+            <div class="excel-actions-cell" style="justify-content:center">
+              <a href="/admin/leads/{{ l.id }}" class="excel-btn-icon" title="Open Lead Details">👁</a>
+              <a href="/admin/leads/{{ l.id }}/edit" class="excel-btn-icon" title="Edit Lead Form">✏️</a>
+              <button type="button" class="excel-btn-icon" data-view-history="lead" data-id="{{ l.id }}" data-name="{{ pname }}" title="View Conversation / Follow-up History">📜</button>
+              <button type="button" class="excel-btn-icon" onclick="openQuickFollowupModal('{{ l.id }}', '{{ pname }}')" title="Add Follow-up Note">💬</button>
+              {% if pphone %}
+              <a href="tel:{{ pphone|replace(' ','') }}" class="excel-btn-icon" title="Call">📞</a>
+              <a href="https://wa.me/{{ (l.pwhatsapp or pphone)|replace(' ','')|replace('+','') }}?text=Hello%20{{ pname|urlencode }}" target="_blank" rel="noopener" class="excel-btn-icon" style="color:#16a34a" title="WhatsApp">💬</a>
+              {% endif %}
+              {% if l.status != 'converted' %}
+              <button type="button" class="excel-btn-icon excel-btn-convert" data-convert-lead="{{ l.id }}" data-name="{{ pname }}" title="Convert to Confirmed Patient">🔄</button>
+              {% endif %}
+            </div>
+            <!-- Hidden test anchor for outcome compatibility -->
+            <div style="display:none">
+              <a href="/admin/leads/{{ l.id }}/outcome/appointment">appt</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="12" style="text-align:center;padding:48px 16px;color:#64748b">
+            <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+            <div style="font-size:1.1rem;font-weight:600">No leads found</div>
+            <p style="margin:4px 0 14px">Try adjusting your search terms, status tabs, or source filters.</p>
+            <a href="/admin/leads" class="btn btn-xs btn-o">Reset All Filters</a>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Excel Footer & Pagination -->
+  <div class="excel-footer excel-pagination-bar">
+    <div>
+      Showing <b>{{ start_idx }}</b>–<b>{{ end_idx }}</b> of <b>{{ total_count }}</b> Leads
+      {% if q %}<span class="muted">(filtered from all records)</span>{% endif %}
+    </div>
+
+    <!-- Page Controls -->
+    {% if total_pages > 1 %}
+    <div class="excel-pagination-nav">
+      <a href="/admin/leads?page=1&limit={{ limit_arg }}&view={{ view }}&src={{ src_f }}&staff={{ staff_filter }}&q={{ q }}&sort={{ sort }}&order={{ order }}"
+         class="excel-page-btn {{ 'disabled' if page <= 1 }}" title="First Page">⏮</a>
+      <a href="/admin/leads?page={{ page - 1 }}&limit={{ limit_arg }}&view={{ view }}&src={{ src_f }}&staff={{ staff_filter }}&q={{ q }}&sort={{ sort }}&order={{ order }}"
+         class="excel-page-btn {{ 'disabled' if page <= 1 }}" title="Previous Page">◀ Prev</a>
+
+      <span style="padding:0 8px;font-weight:600">Page {{ page }} of {{ total_pages }}</span>
+
+      <a href="/admin/leads?page={{ page + 1 }}&limit={{ limit_arg }}&view={{ view }}&src={{ src_f }}&staff={{ staff_filter }}&q={{ q }}&sort={{ sort }}&order={{ order }}"
+         class="excel-page-btn {{ 'disabled' if page >= total_pages }}" title="Next Page">Next ▶</a>
+      <a href="/admin/leads?page={{ total_pages }}&limit={{ limit_arg }}&view={{ view }}&src={{ src_f }}&staff={{ staff_filter }}&q={{ q }}&sort={{ sort }}&order={{ order }}"
+         class="excel-page-btn {{ 'disabled' if page >= total_pages }}" title="Last Page">⏭</a>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Add Lead Modal Overlay -->
@@ -73,559 +442,160 @@
 </div>
 {% endif %}
 
-<!-- Bulk Assignment Sticky Bar -->
-{% if not scoped and staff %}
-<form id="bulk-assign-form" method="post" action="/admin/leads/assign">
-  {{ csrf_field() }}
-  <div id="bulk-bar" class="card" style="display:none;position:sticky;top:10px;z-index:20;background:#0f172a;color:#fff;padding:12px 18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.25);border:1px solid #334155;align-items:center;gap:12px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="background:var(--c);color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;font-size:.8rem" id="selected-count">0</span>
-      <b>leads selected</b>
+<!-- Quick Follow-up Modal -->
+<div id="quick-followup-modal" class="excel-modal-backdrop">
+  <div class="excel-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px">
+      <h3 style="margin:0;font-size:1.15rem;color:#0e7490" id="qf-title">💬 Add Follow-up Note</h3>
+      <button type="button" onclick="closeQuickFollowupModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b">&times;</button>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
-      <select name="assigned_to" id="bulk-staff-select" style="width:auto;min-width:180px;background:#1e293b;color:#fff;border:1px solid #475569;padding:6px 10px;font-size:.85rem;border-radius:6px">
-        <option value="">Assign to staff member…</option>
-        {% for u in staff %}<option value="{{ u.id }}">{{ u.full_name or u.username }}</option>{% endfor %}
-      </select>
-      <button class="btn btn-xs btn-p" type="submit" name="bulk_action" value="assign">Assign Selected</button>
-      <button class="btn btn-xs btn-o" type="submit" name="bulk_action" value="unassign" data-action="unassign" onclick="this.form.assigned_to.value=''" style="background:transparent;color:#cbd5e1;border-color:#475569">Unassign</button>
-      <button class="btn btn-xs btn-o" type="button" id="clear-selection-btn" style="background:transparent;color:#cbd5e1;border-color:#475569">✕ Cancel</button>
-    </div>
-  </div>
-</form>
-{% endif %}
-
-<!-- Clean Filter & Search Panel -->
-<div class="card" style="padding:14px 18px;margin-bottom:16px;background:#fff;border-radius:12px">
-  <!-- Top Section Filter Pills -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
-    <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">SECTIONS:</span>
-    <a class="btn btn-xs {{ 'btn-p' if section_type=='all' else 'btn-o' }}" href="/admin/leads?section_type=all&view={{ view }}&t={{ type_f }}&src={{ src_f }}&q={{ q }}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" style="border-radius:99px;padding:4px 12px">
-      🌐 All Leads <span class="badge {{ 'badge-w' if section_type=='all' else '' }}">{{ counts.all }}</span>
-    </a>
-    <a class="btn btn-xs {{ 'btn-p' if section_type=='whatsapp' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if section_type=='whatsapp' else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/leads?section_type={{ 'all' if section_type=='whatsapp' else 'whatsapp' }}&view={{ view }}&t={{ type_f }}&src={{ src_f }}&q={{ q }}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}">
-      💬 WhatsApp Leads Only <span class="badge" style="{{ 'background:#fff;color:#16a34a' if section_type=='whatsapp' else 'background:#16a34a;color:#fff' }}">{{ counts.whatsapp }}</span>
-      {% if section_type=='whatsapp' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
-    </a>
-    <a class="btn btn-xs {{ 'btn-p' if section_type=='manual' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#2563eb;border-color:#2563eb;color:#fff' if section_type=='manual' else 'color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff' }}" href="/admin/leads?section_type={{ 'all' if section_type=='manual' else 'manual' }}&view={{ view }}&t={{ type_f }}&src={{ src_f }}&q={{ q }}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}">
-      📋 Manual / Website Leads <span class="badge" style="{{ 'background:#fff;color:#2563eb' if section_type=='manual' else 'background:#2563eb;color:#fff' }}">{{ counts.manual }}</span>
-      {% if section_type=='manual' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
-    </a>
-  </div>
-
-  <!-- Status Tabs -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
-    <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">STATUS:</span>
-    {% for v,label in [
-      ('all','All'),
-      ('new','New'),
-      ('contacted','Contacted'),
-      ('followup','Follow-up Due'),
-      ('appointment','Appointment'),
-      ('assessment','Assessment'),
-      ('converted','Converted'),
-      ('hold','On Hold'),
-      ('lost','Lost')
-    ] %}
-    <a class="btn btn-xs {{ 'btn-p' if view==v and not type_f and not q else 'btn-o' }}"
-       href="/admin/leads?section_type={{ section_type }}&view={{ v }}{% if type_f %}&t={{ type_f }}{% endif %}{% if src_f %}&src={{ src_f }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}" style="border-radius:6px">
-      {{ label }} {% if counts[v] and not type_f and not q %}<span class="badge {{ 'badge-w' if view==v else '' }}">{{ counts[v] }}</span>{% endif %}
-    </a>
-    {% endfor %}
-  </div>
-
-  <!-- Search & Category Filters -->
-  <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    <input type="hidden" name="section_type" value="{{ section_type }}">
-    <input type="hidden" name="view" value="{{ view }}">
-    <div style="flex:2;min-width:200px">
-      <input type="search" name="q" value="{{ q or '' }}" placeholder="🔍 Search prospect name, phone, serial #, or notes..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
-    </div>
-    <div style="flex:1;min-width:140px">
-      <select name="src" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
-        <option value="">All Sources</option>
-        <option value="WhatsApp" {{ 'selected' if src_f|lower=='whatsapp' }}>WhatsApp</option>
-        <option value="Facebook" {{ 'selected' if src_f|lower=='facebook' }}>Facebook</option>
-        <option value="Instagram" {{ 'selected' if src_f|lower=='instagram' }}>Instagram</option>
-        <option value="Website Consultation" {{ 'selected' if src_f=='Website Consultation' }}>Website</option>
-        <option value="Walk-in" {{ 'selected' if src_f=='Walk-in' }}>Walk-in</option>
-        <option value="Phone Call" {{ 'selected' if src_f=='Phone Call' }}>Phone Call</option>
-        <option value="Referral" {{ 'selected' if src_f=='Referral' }}>Referral</option>
-      </select>
-    </div>
-    <div style="flex:1;min-width:150px">
-      <select name="t" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
-        <option value="">All Types ({{ lead_types|length }})</option>
-        {% for t in lead_types %}
-        <option value="{{ t }}" {{ 'selected' if type_f==t }}>{{ t }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% if not scoped and staff %}
-    <div style="flex:1;min-width:140px">
-      <select name="staff" style="padding:7px 12px;font-size:.88rem;border-radius:8px">
-        <option value="">All Staff</option>
-        {% for u in staff %}
-        <option value="{{ u.id }}" {{ 'selected' if staff_filter|string==u.id|string }}>👤 {{ u.full_name or u.username }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% endif %}
-    <button class="btn btn-xs btn-p" type="submit" style="padding:7px 16px;border-radius:8px">Filter</button>
-    {% if q or type_f or staff_filter or src_f %}
-    <a class="btn btn-xs btn-o" href="/admin/leads?section_type={{ section_type }}&view={{ view }}" style="padding:7px 12px;border-radius:8px">Clear</a>
-    {% endif %}
-  </form>
-</div>
-
-<!-- Selection Header & Count -->
-{% if not scoped and staff %}
-<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 4px 10px;flex-wrap:wrap;gap:8px">
-  <div style="display:flex;align-items:center;gap:10px">
-    <label style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer;font-weight:600;font-size:.9rem">
-      <input type="checkbox" id="select-all-leads" style="width:17px;height:17px;cursor:pointer"> Select All Visible Leads
-    </label>
-    <button type="button" id="select-all-btn" class="btn btn-xs btn-o" style="padding:2px 8px">Select All</button>
-  </div>
-  {% if q %}
-  <span class="muted" style="font-size:.85rem">Matching "<b>{{ q }}</b>"</span>
-  {% endif %}
-</div>
-{% endif %}
-
-{% if not rows %}
-<div class="card muted" style="text-align:center;padding:36px 20px">
-  <div style="font-size:2rem;margin-bottom:8px">📭</div>
-  <b>No leads found matching your criteria.</b>
-  <p style="margin:6px 0 12px;font-size:.88rem">Try changing the status tab, removing filters, or add a new lead above.</p>
-  {% if q or type_f or staff_filter or src_f %}
-  <a class="btn btn-xs btn-o" href="/admin/leads?section_type={{ section_type }}&view={{ view }}">Clear Filters</a>
-  {% endif %}
-</div>
-{% else %}
-
-  <!-- SECTION 1: 💬 WHATSAPP LEADS -->
-  {% if section_type in ('all', 'whatsapp') %}
-  <div style="margin-top:20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #16a34a;padding-bottom:6px">
-    <h3 style="margin:0;color:#15803d;display:flex;align-items:center;gap:8px;font-size:1.15rem">
-      <span>💬 WhatsApp Leads</span>
-      <span class="badge" style="background:#16a34a;color:#fff;font-size:.85rem">{{ wa_leads|length }}</span>
-    </h3>
-    <span class="muted" style="font-size:0.83em">Inbound enquiries via Meta Cloud API &amp; WhatsApp Webhook</span>
-  </div>
-
-  {% if wa_leads %}
-    {% for l in wa_leads %}
-    <div class="card" style="padding:16px 20px;margin-bottom:14px;border-left:6px solid #16a34a;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);transition:transform .15s">
-      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-        <!-- Checkbox -->
-        {% if not scoped and staff %}
-        <div style="padding-top:2px">
-          <input type="checkbox" name="lead_ids" value="{{ l.id }}" form="bulk-assign-form" class="lead-chk" style="width:18px;height:18px;cursor:pointer" aria-label="Select lead">
+    <form id="quick-followup-form" method="post" onsubmit="submitQuickFollowup(event)">
+      {{ csrf_field() }}
+      <input type="hidden" name="lead_id" id="qf-lead-id">
+      <div style="margin-bottom:12px">
+        <label style="margin:0 0 4px">Interaction Type</label>
+        <select name="interaction_type" id="qf-type">
+          <option value="call">📞 Phone Call</option>
+          <option value="whatsapp">💬 WhatsApp</option>
+          <option value="sms">📱 SMS</option>
+          <option value="email">✉️ Email</option>
+          <option value="in_person">🧑 In-person Consultation</option>
+          <option value="other">📋 Other</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="margin:0 0 4px">Discussion Summary *</label>
+        <textarea name="summary" id="qf-summary" rows="3" required placeholder="What was discussed? (e.g. Explained BK modular pricing; patient will visit with reports.)"></textarea>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="margin:0 0 4px">Outcome</label>
+        <select name="outcome" id="qf-outcome">
+          <option value="Interested">Interested</option>
+          <option value="Appointment Requested">Appointment Requested</option>
+          <option value="Call Back Requested">Call Back Requested</option>
+          <option value="Awaiting Response">Awaiting Response</option>
+          <option value="Not Interested">Not Interested</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label style="margin:0 0 4px">Schedule Next Follow-up?</label>
+          <select name="next_followup_required" id="qf-has-next" onchange="toggleQfNextDate(this.value)">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
         </div>
-        {% endif %}
-
-        <!-- Main Info -->
-        <div style="flex:1;min-width:280px">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;font-size:.78rem;padding:2px 8px;border-radius:6px">
-              💬 WA-{{ (l.pphone or '')|replace('+','')|replace(' ','') or l.id }}
-            </span>
-            <a href="/admin/leads/{{ l.id }}" style="font-size:1.15rem;font-weight:700;color:var(--dark);text-decoration:none">
-              {{ l.pname or 'WhatsApp Contact' }}
-            </a>
-            {% if l.pphone %}<span class="muted" style="font-weight:600">{{ l.pphone }}</span>{% endif %}
-          </div>
-
-          <!-- Badges row -->
-          <div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <span style="background:{{ type_colors.get(l.interest, '#0e7490') }};color:#fff;font-weight:700;font-size:.78rem;padding:2px 10px;border-radius:99px">
-              {{ l.interest or 'General Inquiry' }}
-            </span>
-
-            {% if l.status=='new' %}<span class="tag tag-due">new</span>
-            {% elif l.status=='contacted' %}<span class="tag tag-pen">contacted</span>
-            {% elif l.status=='followup' %}<span class="tag tag-pen">follow-up</span>
-            {% elif l.status=='appointment' %}<span class="tag tag-ok">appointment</span>
-            {% elif l.status=='assessment' %}<span class="tag tag-pen" style="background:#fef3c7;color:#92400e">assessment</span>
-            {% elif l.status=='converted' %}<span class="tag tag-ok" style="background:#10b981;color:#fff">converted</span>
-            {% elif l.status=='hold' %}<span class="tag tag-new">on hold</span>
-            {% elif l.status=='lost' %}<span class="tag tag-new">lost</span>{% endif %}
-
-            {% if l.assigned_name %}
-            <span class="tag" style="background:#e0f2fe;color:#0369a1">👤 {{ l.assigned_full_name or l.assigned_name }}</span>
-            {% else %}
-            <span class="tag" style="background:#f1f5f9;color:#64748b">👤 Not assigned</span>
-            {% endif %}
-
-            {% if l.last_due_date %}
-            <span class="tag {{ 'tag-due' if l.last_due_date <= today else 'tag-pen' }}" style="font-size:.76rem">
-              📅 FU: {{ l.last_due_date|dshort }}
-            </span>
-            {% endif %}
-          </div>
-
-          <!-- WhatsApp Chat Bubble Preview -->
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #16a34a;border-radius:10px;padding:10px 14px;margin:8px 0;max-width:680px">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.78rem;color:#15803d;font-weight:700">
-              <span>💬 Incoming WhatsApp Message:</span>
-              <span class="muted" style="margin-left:auto;font-weight:normal">{{ l.created_at[:16] if l.created_at else '' }}</span>
-            </div>
-            <div style="font-size:.92rem;color:#1e293b;line-height:1.4">
-              "{{ l.last_summary or l.notes or l.last_note or 'Patient initiated enquiry via WhatsApp Webhook' }}"
-            </div>
-          </div>
-
-          <!-- Metadata -->
-          <div class="muted" style="font-size:.8rem;margin-top:4px">
-            📅 Received: {{ l.created_at[:16] if l.created_at else '' }}
-            {% if l.area %} · 📍 {{ l.area }}{% endif %}
-            {% if l.history_count and l.history_count > 0 %} · 💬 {{ l.history_count }} interaction(s){% endif %}
-          </div>
-        </div>
-
-        <!-- Actions Column -->
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:240px">
-          <!-- Primary Actions -->
-          <div style="display:flex;gap:6px">
-            <a href="/admin/leads/{{ l.id }}" class="btn btn-xs btn-p" style="flex:2;text-align:center;padding:7px 10px;border-radius:8px;font-weight:700;background:#0e7490;border-color:#0891b2">
-              👁️ Open Lead
-            </a>
-            {% if can("leads_edit") %}
-            <a href="/admin/leads/{{ l.id }}/edit" class="btn btn-xs btn-o" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
-              ✏️ Edit
-            </a>
-            {% endif %}
-          </div>
-
-          <!-- Web WhatsApp & Call Buttons -->
-          {% set wa = (l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
-          {% if wa %}
-          {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center regarding " ~ (l.interest or 'your prosthetic / orthotic consultation') ~ ". How can we assist you today?" %}
-          <div style="display:flex;gap:6px">
-            <a class="btn btn-xs" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:700;flex:2;text-align:center;padding:7px 10px;border-radius:8px;box-shadow:0 2px 6px rgba(22,163,74,0.3)">
-              💬 WhatsApp ↗
-            </a>
-            <a class="btn btn-xs btn-o" href="tel:{{ l.pphone }}" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
-              📞 Call
-            </a>
-          </div>
-          {% endif %}
-
-          <!-- Staff Assign -->
-          {% if not scoped and staff %}
-          <form method="post" action="/admin/leads/{{ l.id }}/assign_one" style="display:flex;gap:6px">
-            {{ csrf_field() }}
-            <select name="assigned_to" style="flex:1;font-size:.82rem;padding:4px 8px;border-radius:6px">
-              <option value="">Assign to staff…</option>
-              {% for u in staff %}
-              <option value="{{ u.id }}" {{ 'selected' if l.assigned_to==u.id }}>{{ u.full_name or u.username }}</option>
-              {% endfor %}
-            </select>
-            <button class="btn btn-xs btn-p" style="border-radius:6px">Assign</button>
-          </form>
-          {% endif %}
-
-          <!-- Convert to Patient Button -->
-          {% if l.status != 'converted' and can("leads_edit") %}
-          <form method="post" action="/admin/leads/{{ l.id }}/convert" style="margin:0" data-confirm="Convert {{ l.pname }} into a Confirmed Master Patient?">
-            {{ csrf_field() }}
-            <button type="submit" class="btn btn-xs btn-p" style="width:100%;background:#0e7490;border-color:#0891b2;padding:6px 10px;border-radius:6px;font-weight:700">
-              👤 Convert to Patient →
-            </button>
-          </form>
-          {% elif l.status == 'converted' and l.pid %}
-          <a href="/admin/patients/{{ l.pid }}" class="btn btn-xs btn-o" style="text-align:center;color:#059669;border-color:#10b981;padding:6px 10px;border-radius:6px;font-weight:700">
-            ✓ Patient #{{ l.serial_no }}
-          </a>
-          {% endif %}
-
-          <!-- Outcome Pipeline Conversion Buttons (Backward Compatible) -->
-          {% if can("leads_edit") %}
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/appointment" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appt</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:inline">
-              {{ csrf_field() }}<input type="hidden" name="due_date" value="{{ today }}">
-              <button class="btn btn-xs btn-o">🔁 Follow-up</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/hold" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-o">⏸ Hold</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/lost" style="display:inline" data-confirm="Mark this lead as lost?">
-              {{ csrf_field() }}<button class="btn btn-xs btn-o">✖ Lost</button></form>
-          </div>
-
-          <details style="font-size:.82rem">
-            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note / due date</summary>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid var(--line)">
-              {{ csrf_field() }}
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <input type="date" name="due_date" value="{{ today }}" style="width:auto;flex:1;min-width:115px;padding:3px 6px;font-size:.82rem">
-                <input type="text" name="note" placeholder="Note (e.g. called, agreed to visit Saturday)..." style="flex:2;min-width:140px;padding:3px 6px;font-size:.82rem">
-              </div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-                <button class="btn btn-xs btn-p" formaction="/admin/leads/{{ l.id }}/outcome/appointment">📅 To Appt</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/followup">🔁 Follow-up</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/hold">⏸ Hold</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/lost" data-confirm="Mark this lead as lost?">✖ Lost</button>
-              </div>
-            </form>
-          </details>
-          {% endif %}
+        <div style="flex:1;min-width:140px" id="qf-next-date-wrap">
+          <label style="margin:0 0 4px">Next Follow-up Date</label>
+          <input type="date" name="next_followup_date" id="qf-next-date" value="{{ today }}">
         </div>
       </div>
-    </div>
-    {% endfor %}
-  {% else %}
-    <div class="card muted" style="padding:14px 16px;margin-bottom:14px">
-      No WhatsApp leads found matching your filter criteria. Inbound WhatsApp messages from Meta Webhook will appear here automatically.
-    </div>
-  {% endif %}
-  {% endif %}
-
-  <!-- SECTION 2: 📋 MANUAL & WEBSITE / APPOINTMENT LEADS -->
-  {% if section_type in ('all', 'manual') %}
-  <div style="margin-top:26px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:6px">
-    <h3 style="margin:0;color:#1d4ed8;display:flex;align-items:center;gap:8px;font-size:1.15rem">
-      <span>📋 Manual / Website &amp; Appointment Leads</span>
-      <span class="badge" style="background:#2563eb;color:#fff;font-size:.85rem">{{ manual_leads|length }}</span>
-    </h3>
-    <span class="muted" style="font-size:0.83em">Walk-in, Phone Inquiries, Website Appointments &amp; Referrals</span>
-  </div>
-
-  {% if manual_leads %}
-    {% for l in manual_leads %}
-    <div class="card" style="padding:16px 20px;margin-bottom:14px;border-left:6px solid {{ type_colors.get(l.interest, '#64748b') }};border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);transition:transform .15s">
-      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-        <!-- Checkbox -->
-        {% if not scoped and staff %}
-        <div style="padding-top:2px">
-          <input type="checkbox" name="lead_ids" value="{{ l.id }}" form="bulk-assign-form" class="lead-chk" style="width:18px;height:18px;cursor:pointer" aria-label="Select lead">
-        </div>
-        {% endif %}
-
-        <!-- Main Info -->
-        <div style="flex:1;min-width:280px">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <a href="/admin/leads/{{ l.id }}" style="font-size:1.15rem;font-weight:700;color:var(--dark);text-decoration:none">
-              {{ l.pname or 'Lead #' ~ l.id }}
-            </a>
-            <span class="tag tag-new" style="font-size:.72rem">LEAD-{{ '%05d'|format(l.id) }}</span>
-            {% if l.serial_no and l.status == 'converted' %}<span class="tag tag-ok">#{{ l.serial_no }}</span>{% endif %}
-            {% if l.pphone %}<span class="muted" style="font-weight:600">{{ l.pphone }}</span>{% endif %}
-          </div>
-
-          <!-- Badges row -->
-          <div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <span class="tag tag-new">{{ l.badge }}</span>
-
-            <span style="background:{{ type_colors.get(l.interest, '#64748b') }};color:#fff;font-weight:700;font-size:.78rem;padding:2px 10px;border-radius:99px">
-              {{ l.interest or 'General Inquiry' }}
-            </span>
-
-            {% if l.status=='new' %}<span class="tag tag-due">new</span>
-            {% elif l.status=='contacted' %}<span class="tag tag-pen">contacted</span>
-            {% elif l.status=='followup' %}<span class="tag tag-pen">follow-up</span>
-            {% elif l.status=='appointment' %}<span class="tag tag-ok">appointment</span>
-            {% elif l.status=='assessment' %}<span class="tag tag-pen" style="background:#fef3c7;color:#92400e">assessment</span>
-            {% elif l.status=='converted' %}<span class="tag tag-ok" style="background:#10b981;color:#fff">converted</span>
-            {% elif l.status=='hold' %}<span class="tag tag-new">on hold</span>
-            {% elif l.status=='lost' %}<span class="tag tag-new">lost</span>{% endif %}
-
-            {% if l.assigned_name %}
-            <span class="tag" style="background:#e0f2fe;color:#0369a1">👤 {{ l.assigned_full_name or l.assigned_name }}</span>
-            {% else %}
-            <span class="tag" style="background:#f1f5f9;color:#64748b">👤 Not assigned</span>
-            {% endif %}
-
-            {% if l.last_due_date %}
-            <span class="tag {{ 'tag-due' if l.last_due_date <= today else 'tag-pen' }}" style="font-size:.76rem">
-              📅 FU: {{ l.last_due_date|dshort }}
-            </span>
-            {% endif %}
-          </div>
-
-          <!-- Notes -->
-          {% if l.notes %}
-          <div style="font-size:.88rem;color:var(--txt);margin:6px 0;background:#f8fafc;padding:6px 10px;border-radius:6px;border-left:3px solid var(--c)">
-            <b>📝 Note:</b> {{ l.notes }}
-          </div>
-          {% endif %}
-
-          <!-- Latest History Outcome (if any) -->
-          {% if l.last_note or l.last_outcome or l.last_summary %}
-          <div style="background:#f8fafc;border-left:3px solid var(--c);padding:5px 10px;border-radius:4px;margin:6px 0;font-size:.83rem">
-            ⚡ <b>Latest:</b> <span class="tag tag-pen" style="font-size:.72rem">{{ (l.last_outcome or 'Update')|title }}</span>
-            {{ l.last_summary or l.last_note }}
-            {% if l.last_due_date %}<span class="muted">(Due: {{ l.last_due_date|dshort }})</span>{% endif %}
-          </div>
-          {% endif %}
-
-          <!-- Metadata -->
-          <div class="muted" style="font-size:.8rem;margin-top:4px">
-            📅 {{ l.created_at[:10]|dshort if l.created_at else '' }}
-            {% if l.area %} · 📍 {{ l.area }}{% endif %}
-            {% if l.history_count and l.history_count > 0 %} · 💬 {{ l.history_count }} interaction(s){% endif %}
-          </div>
-        </div>
-
-        <!-- Actions Column -->
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:240px">
-          <!-- Primary Actions -->
-          <div style="display:flex;gap:6px">
-            <a href="/admin/leads/{{ l.id }}" class="btn btn-xs btn-p" style="flex:2;text-align:center;padding:7px 10px;border-radius:8px;font-weight:700;background:#0e7490;border-color:#0891b2">
-              👁️ Open Lead
-            </a>
-            {% if can("leads_edit") %}
-            <a href="/admin/leads/{{ l.id }}/edit" class="btn btn-xs btn-o" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">
-              ✏️ Edit
-            </a>
-            {% endif %}
-          </div>
-
-          <!-- Contact Shortcuts -->
-          <div style="display:flex;gap:6px">
-            {% if l.pphone %}
-            <a class="btn btn-xs btn-o" href="tel:{{ l.pphone }}" style="flex:1;text-align:center;padding:7px 10px;border-radius:8px">📞 Call</a>
-            {% set wa = (l.pwhatsapp or l.pphone or '') | replace('+','') | replace(' ','') | replace('-','') %}
-            {% if wa %}
-            {% set wa_text = "Hello " ~ (l.pname or '') ~ ", thank you for contacting OrthoPro Artificial Limbs Center. How can we assist you today?" %}
-            <a class="btn btn-xs btn-o" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="flex:1;text-align:center;color:#16a34a;border-color:#86efac;background:#f0fdf4;padding:7px 10px;border-radius:8px">💬 WhatsApp</a>
-            {% endif %}
-            {% endif %}
-          </div>
-
-          <!-- Quick Individual Assign (Super Admin) -->
-          {% if not scoped and staff %}
-          <form method="post" action="/admin/leads/{{ l.id }}/assign_one" style="display:flex;gap:6px">
-            {{ csrf_field() }}
-            <select name="assigned_to" style="flex:1;font-size:.82rem;padding:4px 8px;border-radius:6px">
-              <option value="">Assign to staff…</option>
-              {% for u in staff %}
-              <option value="{{ u.id }}" {{ 'selected' if l.assigned_to==u.id }}>{{ u.full_name or u.username }}</option>
-              {% endfor %}
-            </select>
-            <button class="btn btn-xs btn-p" style="border-radius:6px">Assign</button>
-          </form>
-          {% endif %}
-
-          <!-- Convert to Patient Button -->
-          {% if l.status != 'converted' and can("leads_edit") %}
-          <form method="post" action="/admin/leads/{{ l.id }}/convert" style="margin:0" data-confirm="Convert {{ l.pname }} into a Confirmed Master Patient?">
-            {{ csrf_field() }}
-            <button type="submit" class="btn btn-xs btn-p" style="width:100%;background:#0e7490;border-color:#0891b2;padding:6px 10px;border-radius:6px;font-weight:700">
-              👤 Convert to Patient →
-            </button>
-          </form>
-          {% elif l.status == 'converted' and l.pid %}
-          <a href="/admin/patients/{{ l.pid }}" class="btn btn-xs btn-o" style="text-align:center;color:#059669;border-color:#10b981;padding:6px 10px;border-radius:6px;font-weight:700">
-            ✓ Patient #{{ l.serial_no }}
-          </a>
-          {% endif %}
-
-          <!-- Direct Outcome Buttons -->
-          {% if can("leads_edit") %}
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/appointment" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-p" title="Converts lead to Consultation stage">📅 Appt</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:inline">
-              {{ csrf_field() }}<input type="hidden" name="due_date" value="{{ today }}">
-              <button class="btn btn-xs btn-o">🔁 Follow-up</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/hold" style="display:inline">
-              {{ csrf_field() }}<button class="btn btn-xs btn-o">⏸ Hold</button></form>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/lost" style="display:inline" data-confirm="Mark this lead as lost?">
-              {{ csrf_field() }}<button class="btn btn-xs btn-o">✖ Lost</button></form>
-          </div>
-
-          <details style="font-size:.82rem">
-            <summary class="muted" style="cursor:pointer;padding:2px 0">+ Add custom note / due date</summary>
-            <form method="post" action="/admin/leads/{{ l.id }}/outcome/followup" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid var(--line)">
-              {{ csrf_field() }}
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <input type="date" name="due_date" value="{{ today }}" style="width:auto;flex:1;min-width:115px;padding:3px 6px;font-size:.82rem">
-                <input type="text" name="note" placeholder="Note (e.g. called, agreed to visit Saturday)..." style="flex:2;min-width:140px;padding:3px 6px;font-size:.82rem">
-              </div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-                <button class="btn btn-xs btn-p" formaction="/admin/leads/{{ l.id }}/outcome/appointment">📅 To Appt</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/followup">🔁 Follow-up</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/hold">⏸ Hold</button>
-                <button class="btn btn-xs btn-o" formaction="/admin/leads/{{ l.id }}/outcome/lost" data-confirm="Mark this lead as lost?">✖ Lost</button>
-              </div>
-            </form>
-          </details>
-          {% endif %}
-        </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-o" onclick="closeQuickFollowupModal()">Cancel</button>
+        <button type="submit" class="btn btn-p" style="background:#0e7490">Save Interaction</button>
       </div>
-    </div>
-    {% endfor %}
-  {% else %}
-    <div class="card muted" style="padding:14px 16px;margin-bottom:14px">
-      No manual or website appointment leads found matching your filter criteria.
-    </div>
-  {% endif %}
-  {% endif %}
+    </form>
+  </div>
+</div>
 
-{% endif %}
+<!-- History Modal -->
+<div id="excel-history-modal" class="excel-modal-backdrop">
+  <div class="excel-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px">
+      <h3 style="margin:0;font-size:1.15rem;color:#0e7490" id="excel-hist-title">📜 Conversation History</h3>
+      <button type="button" id="excel-hist-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b">&times;</button>
+    </div>
+    <div id="excel-hist-content">Loading history…</div>
+  </div>
+</div>
 
 <script>
-function openAddLeadModal() {
-  var modal = document.getElementById("add-lead-modal");
-  if (modal) {
-    modal.style.display = "flex";
-    var first = modal.querySelector("input[name='name']");
-    if (first) setTimeout(function() { first.focus(); }, 60);
+function sortTable(col) {
+  var url = new URL(window.location.href);
+  var curCol = url.searchParams.get("sort") || "id";
+  var curOrder = url.searchParams.get("order") || "desc";
+  if (curCol === col) {
+    url.searchParams.set("order", curOrder === "asc" ? "desc" : "asc");
+  } else {
+    url.searchParams.set("sort", col);
+    url.searchParams.set("order", "asc");
   }
-}
-function closeAddLeadModal() {
-  var modal = document.getElementById("add-lead-modal");
-  if (modal) modal.style.display = "none";
-}
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Escape") closeAddLeadModal();
-});
-document.addEventListener("click", function(e) {
-  var modal = document.getElementById("add-lead-modal");
-  if (modal && e.target === modal) closeAddLeadModal();
-});
-if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
-  openAddLeadModal();
-}
-// Bulk selection
-var selectAll = document.getElementById("select-all-leads");
-var selectAllBtn = document.getElementById("select-all-btn");
-var bulkBar = document.getElementById("bulk-bar");
-var selectedCount = document.getElementById("selected-count");
-var leadChks = document.querySelectorAll(".lead-chk");
-
-function updateBulkBar() {
-  var checked = document.querySelectorAll(".lead-chk:checked");
-  if (selectedCount) selectedCount.textContent = checked.length;
-  if (bulkBar) bulkBar.style.display = checked.length > 0 ? "flex" : "none";
-  if (selectAll) selectAll.checked = (checked.length === leadChks.length && leadChks.length > 0);
+  window.location.href = url.toString();
 }
 
-if (selectAll) {
-  selectAll.addEventListener("change", function() {
-    leadChks.forEach(function(c) { c.checked = selectAll.checked; });
-    updateBulkBar();
+function syncBulkIds(containerId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  document.querySelectorAll(".excel-row-chk:checked").forEach(function(c) {
+    var inp = document.createElement("input");
+    inp.type = "hidden";
+    inp.name = "lead_ids";
+    inp.value = c.value;
+    container.appendChild(inp);
   });
 }
-if (selectAllBtn) {
-  selectAllBtn.addEventListener("click", function() {
-    var anyUnchecked = Array.from(leadChks).some(function(c) { return !c.checked; });
-    leadChks.forEach(function(c) { c.checked = anyUnchecked; });
-    updateBulkBar();
-  });
+
+function openQuickFollowupModal(leadId, leadName) {
+  var modal = document.getElementById("quick-followup-modal");
+  document.getElementById("qf-lead-id").value = leadId;
+  document.getElementById("qf-title").textContent = "💬 Add Follow-up — " + (leadName || ("#" + leadId));
+  document.getElementById("qf-summary").value = "";
+  modal.style.display = "flex";
 }
-leadChks.forEach(function(c) {
-  c.addEventListener("change", updateBulkBar);
-});
-var clearSelBtn = document.getElementById("clear-selection-btn");
-if (clearSelBtn) {
-  clearSelBtn.addEventListener("click", function() {
-    leadChks.forEach(function(c) { c.checked = false; });
-    updateBulkBar();
+
+function closeQuickFollowupModal() {
+  document.getElementById("quick-followup-modal").style.display = "none";
+}
+
+function toggleQfNextDate(val) {
+  var wrap = document.getElementById("qf-next-date-wrap");
+  if (wrap) wrap.style.display = val === "yes" ? "block" : "none";
+}
+
+function submitQuickFollowup(e) {
+  e.preventDefault();
+  var form = e.target;
+  var leadId = document.getElementById("qf-lead-id").value;
+  var formData = new FormData(form);
+
+  fetch("/admin/leads/" + leadId + "/interaction", {
+    method: "POST",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      "Accept": "application/json"
+    },
+    body: formData
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      closeQuickFollowupModal();
+      var nextDate = document.getElementById("qf-next-date").value;
+      var hasNext = document.getElementById("qf-has-next").value === "yes";
+      var row = document.getElementById("lead-row-" + leadId);
+      if (row && hasNext && nextDate) {
+        var nextCell = row.querySelector('[data-col="next_followup"]');
+        if (nextCell) {
+          nextCell.setAttribute("data-value", nextDate);
+          nextCell.innerHTML = '<span style="color:#0e7490">📅 ' + nextDate + '</span>';
+        }
+      }
+      var existing = document.getElementById("excel-toast-msg");
+      if (existing) existing.remove();
+      var toast = document.createElement("div");
+      toast.id = "excel-toast-msg";
+      toast.className = "excel-toast excel-toast-success show";
+      toast.innerHTML = "✓ Follow-up interaction recorded";
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 2500);
+    } else {
+      alert(data.error || "Failed to record follow-up");
+    }
+  })
+  .catch(function() {
+    alert("Network error recording interaction");
   });
 }
 </script>
-
 {% endblock %}

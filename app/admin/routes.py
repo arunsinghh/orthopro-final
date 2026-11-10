@@ -5,9 +5,10 @@ are POST-only, CSRF-protected (Flask-WTF), and audited.
 """
 import datetime as dt
 import os
+import math
 import re
 
-from flask import (Blueprint, abort, flash, redirect, render_template, request,
+from flask import (Blueprint, abort, flash, jsonify, redirect, render_template, request,
                    session, url_for)
 
 from .. import db
@@ -107,23 +108,217 @@ def dashboard():
 @bp.route("/patients")
 @login_required
 def patients():
+    if not has_cap("patients"):
+        abort(403)
     q = request.args.get("q", "").strip()
+    stage_f = request.args.get("stage", "").strip()
+    due_f = request.args.get("due", "").strip()
+    status_f = request.args.get("status", "").strip()
+
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    limit_arg = request.args.get("limit", "50").strip().lower()
+    if limit_arg == "all":
+        limit = 500
+    else:
+        try:
+            limit = int(limit_arg)
+            if limit not in (10, 25, 50, 100, 200, 500):
+                limit = 50
+        except ValueError:
+            limit = 50
+
+    sort_col = request.args.get("sort", "id").strip().lower()
+    sort_order = request.args.get("order", "desc").strip().lower()
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
+
+    sort_map = {
+        "id": "p.id",
+        "serial_no": "p.serial_no",
+        "name": "p.name",
+        "phone": "p.phone",
+        "area": "p.area",
+        "age": "p.age",
+        "gender": "p.gender",
+        "status": "p.status",
+        "stage": "p.pipeline_stage",
+        "pipeline_stage": "p.pipeline_stage",
+        "next_followup": "p.next_followup",
+        "source": "p.source",
+        "balance": "(COALESCE(p.total_amount, 0) - COALESCE(p.advance_amount, 0))",
+        "created_at": "p.created_at"
+    }
+    order_sql = f"{sort_map.get(sort_col, 'p.id')} {sort_order.upper()}"
+
+    where = " WHERE p.is_confirmed=1 AND p.status<>'lead'"
+    args = []
+
     if q:
-        # search by serial number or phone (also matches name as a courtesy)
         like = f"%{q}%"
         phone_like = f"%{q.replace(' ', '').replace('+', '')}%"
-        rows = db.q("""SELECT id, serial_no, name, phone, area, notes, pipeline_stage,
-                total_amount, advance_amount, created_at FROM patients
-            WHERE is_confirmed=1 AND status<>'lead'
-                AND (serial_no LIKE ? OR REPLACE(REPLACE(phone,' ',''),'+','') LIKE ? OR name LIKE ?)
-            ORDER BY id DESC""", (like, phone_like, like))
-    else:
-        rows = db.q("""SELECT id, serial_no, name, phone, area, notes, pipeline_stage,
-                total_amount, advance_amount, created_at FROM patients
-            WHERE is_confirmed=1 AND status<>'lead' ORDER BY id DESC""")
-    return render_template("admin/patients.html", rows=rows, q=q,
-                           stages=PIPELINE_LABELS, section="patients")
+        where += """ AND (p.serial_no LIKE ?
+            OR REPLACE(REPLACE(p.phone,' ',''),'+','') LIKE ?
+            OR p.name ILIKE ?
+            OR p.area ILIKE ?
+            OR p.notes ILIKE ?
+            OR CAST(p.id AS TEXT) LIKE ?)"""
+        args.extend([like, phone_like, like, like, like, like])
 
+    if stage_f and stage_f != "all":
+        if stage_f == "active":
+            where += " AND p.pipeline_stage<>'' AND p.pipeline_stage<>'completed'"
+        elif stage_f == "completed":
+            where += " AND p.pipeline_stage='completed'"
+        elif stage_f in PIPELINE_STAGES:
+            where += " AND p.pipeline_stage=?"
+            args.append(stage_f)
+
+    if due_f == "1":
+        where += " AND (COALESCE(p.total_amount, 0) - COALESCE(p.advance_amount, 0)) > 0"
+
+    if status_f and status_f != "all":
+        where += " AND p.status=?"
+        args.append(status_f)
+
+    count_sql = f"SELECT COUNT(*) c FROM patients p{where}"
+    total_count = db.q(count_sql, tuple(args), one=True)["c"]
+    total_pages = max(1, math.ceil(total_count / limit)) if limit else 1
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * limit
+
+    sql = f"""SELECT p.*,
+        (SELECT due_date FROM followups WHERE patient_id=p.id AND status='pending' ORDER BY due_date ASC LIMIT 1) fu_next,
+        (SELECT note FROM followups WHERE patient_id=p.id ORDER BY id DESC LIMIT 1) fu_last_note,
+        (SELECT created_at FROM followups WHERE patient_id=p.id ORDER BY id DESC LIMIT 1) fu_last_date
+        FROM patients p{where} ORDER BY {order_sql} LIMIT ? OFFSET ?"""
+    page_args = list(args) + [limit, offset]
+    rows = db.q(sql, tuple(page_args))
+
+    c_res = db.q("""SELECT
+        COUNT(*) FILTER (WHERE is_confirmed=1 AND status<>'lead') AS c_all,
+        COUNT(*) FILTER (WHERE is_confirmed=1 AND status<>'lead' AND pipeline_stage<>'' AND pipeline_stage<>'completed') AS c_active,
+        COUNT(*) FILTER (WHERE is_confirmed=1 AND status<>'lead' AND pipeline_stage='completed') AS c_completed,
+        COUNT(*) FILTER (WHERE is_confirmed=1 AND status<>'lead' AND (COALESCE(total_amount,0) - COALESCE(advance_amount,0)) > 0) AS c_due
+        FROM patients""", one=True)
+    counts = {
+        "all": c_res["c_all"] if c_res else 0,
+        "active": c_res["c_active"] if c_res else 0,
+        "completed": c_res["c_completed"] if c_res else 0,
+        "due": c_res["c_due"] if c_res else 0,
+    }
+
+    start_idx = offset + 1 if total_count > 0 else 0
+    end_idx = min(offset + limit, total_count)
+
+    sources = [x["name"] for x in db.q("SELECT name FROM sources WHERE is_active=1 ORDER BY sort_order")]
+    if not sources:
+        sources = ['Walk-in', 'WhatsApp', 'Doctor Referral', 'Patient Referral', 'Website', 'Other']
+
+    stage_options = [{"id": s, "name": PIPELINE_LABELS.get(s, s)} for s in PIPELINE_STAGES]
+
+    return render_template("admin/patients.html", rows=rows, q=q,
+                           page=page, limit=limit, limit_arg=limit_arg,
+                           total_count=total_count, total_pages=total_pages,
+                           start_idx=start_idx, end_idx=end_idx,
+                           sort=sort_col, order=sort_order,
+                           stage_f=stage_f, due_f=due_f, status_f=status_f,
+                           counts=counts, stages=PIPELINE_LABELS,
+                           pipeline_stages=PIPELINE_STAGES,
+                           stage_options=stage_options,
+                           sources=sources, today=h.today(), section="patients")
+
+
+@bp.route("/patients/<int:pid>/inline", methods=["POST"])
+@login_required
+def patient_inline(pid):
+    if not has_cap("patients_edit") and not has_cap("patients"):
+        return jsonify({"ok": False, "error": "Permission denied"}), 403
+
+    p = db.q("SELECT * FROM patients WHERE id=?", (pid,), one=True)
+    if not p:
+        return jsonify({"ok": False, "error": "Patient not found"}), 404
+
+    data = request.get_json(silent=True) or request.form
+    field = (data.get("field") or "").strip().lower()
+    value = (data.get("value") or "").strip()
+
+    allowed = {
+        "name", "phone", "area", "age", "gender", "status",
+        "pipeline_stage", "next_followup", "notes", "source"
+    }
+    if field not in allowed:
+        return jsonify({"ok": False, "error": f"Field '{field}' cannot be edited inline"}), 400
+
+    display_value = value
+
+    if field == "name":
+        if not value:
+            return jsonify({"ok": False, "error": "Name cannot be empty"}), 400
+        db.q("UPDATE patients SET name=? WHERE id=?", (value, pid))
+    elif field == "phone":
+        db.q("UPDATE patients SET phone=? WHERE id=?", (value, pid))
+    elif field == "area":
+        db.q("UPDATE patients SET area=? WHERE id=?", (value, pid))
+    elif field == "age":
+        db.q("UPDATE patients SET age=? WHERE id=?", (value, pid))
+    elif field == "gender":
+        if value not in ("Male", "Female", "Other", ""):
+            return jsonify({"ok": False, "error": "Invalid gender"}), 400
+        db.q("UPDATE patients SET gender=? WHERE id=?", (value, pid))
+    elif field == "status":
+        valid_status = {"active", "lead", "completed", "archived", "inactive"}
+        if value.lower() not in valid_status:
+            return jsonify({"ok": False, "error": "Invalid status"}), 400
+        db.q("UPDATE patients SET status=? WHERE id=?", (value.lower(), pid))
+        display_value = value.lower()
+    elif field == "pipeline_stage":
+        if value and value not in PIPELINE_STAGES:
+            return jsonify({"ok": False, "error": "Invalid pipeline stage"}), 400
+        old_stage = p.get("pipeline_stage") or ""
+        db.q("UPDATE patients SET pipeline_stage=?, stage_updated_at=? WHERE id=?",
+             (value, h.now(), pid))
+        if value != old_stage:
+            db.q("INSERT INTO patient_stage_log (patient_id, stage, note, created_at) VALUES (?, ?, 'Inline stage change', ?)",
+                 (pid, value, h.now()))
+        display_value = PIPELINE_LABELS.get(value, value)
+    elif field == "next_followup":
+        val = value if value else None
+        db.q("UPDATE patients SET next_followup=? WHERE id=?", (val, pid))
+    elif field == "source":
+        db.q("UPDATE patients SET source=? WHERE id=?", (value, pid))
+    elif field == "notes":
+        db.q("UPDATE patients SET notes=? WHERE id=?", (value, pid))
+
+    record("patient_inline_edit", f"id={pid} field={field} val={value[:50]}", entity_type="patient", entity_id=pid)
+    return jsonify({"ok": True, "field": field, "value": value, "display_value": display_value})
+
+
+@bp.route("/patients/<int:pid>/history-json")
+@login_required
+def patient_history_json(pid):
+    if not has_cap("patients"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    p = db.q("SELECT id, serial_no, name, phone, pipeline_stage FROM patients WHERE id=?", (pid,), one=True)
+    if not p:
+        return jsonify({"ok": False, "error": "Patient not found"}), 404
+    fups = db.q("SELECT * FROM followups WHERE patient_id=? ORDER BY id DESC", (pid,))
+    items = []
+    for fu in fups:
+        items.append({
+            "id": fu["id"],
+            "note": fu.get("note") or "",
+            "due_date": str(fu["due_date"]) if fu.get("due_date") else "",
+            "status": fu.get("status") or "pending",
+            "date": str(fu.get("created_at") or "")[:10]
+        })
+    return jsonify({
+        "ok": True,
+        "patient": {"id": p["id"], "serial_no": p["serial_no"], "name": p["name"], "phone": p["phone"]},
+        "followups": items
+    })
 
 @bp.route("/patients/new", methods=["POST"])
 @login_required
@@ -283,8 +478,43 @@ def leads():
     section_type = request.args.get("section_type", "all").strip().lower()
     if section_type not in ("all", "whatsapp", "manual"):
         section_type = "all"
-    scoped_uid = None if security.current_role() == "super_admin" \
-        else session["admin_uid"]
+    scoped_uid = None if security.current_role() == "super_admin"         else session["admin_uid"]
+
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    limit_arg = request.args.get("limit", "50").strip().lower()
+    if limit_arg == "all":
+        limit = 500
+    else:
+        try:
+            limit = int(limit_arg)
+            if limit not in (10, 25, 50, 100, 200, 500):
+                limit = 50
+        except ValueError:
+            limit = 50
+
+    sort_col = request.args.get("sort", "id").strip().lower()
+    sort_order = request.args.get("order", "desc").strip().lower()
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
+
+    sort_map = {
+        "id": "l.id",
+        "name": "COALESCE(NULLIF(l.name, ''), p.name, '')",
+        "phone": "COALESCE(NULLIF(l.phone, ''), p.phone, '')",
+        "area": "COALESCE(NULLIF(l.area, ''), p.area, '')",
+        "source": "l.source",
+        "interest": "l.interest",
+        "status": "l.status",
+        "assigned": "su.full_name",
+        "assigned_to": "su.full_name",
+        "last_contact": "(SELECT interaction_at FROM lead_history WHERE lead_id=l.id ORDER BY id DESC LIMIT 1)",
+        "next_followup": "COALESCE(l.next_followup, (SELECT due_date FROM lead_history WHERE lead_id=l.id AND due_date IS NOT NULL ORDER BY id DESC LIMIT 1))",
+        "created_at": "l.created_at"
+    }
+    order_sql = f"{sort_map.get(sort_col, 'l.id')} {sort_order.upper()}"
+
     base = """SELECT l.id, l.status, l.source, l.platform, l.interest, l.notes, l.created_at,
         l.assigned_to, l.next_followup, l.converted_at,
         COALESCE(NULLIF(l.name, ''), p.name, '') pname,
@@ -338,14 +568,29 @@ def leads():
     if q:
         where += """ AND (COALESCE(NULLIF(l.name, ''), p.name, '') ILIKE ?
             OR COALESCE(NULLIF(l.phone, ''), p.phone, '') ILIKE ?
+            OR COALESCE(NULLIF(l.area, ''), p.area, '') ILIKE ?
+            OR CAST(l.id AS TEXT) ILIKE ?
             OR CAST(p.serial_no AS TEXT) ILIKE ?
             OR l.notes ILIKE ?)"""
         like = f"%{q}%"
-        args.extend([like, like, like, like])
-    sql = base + where + " ORDER BY l.id DESC LIMIT 300"
-    rows = db.q(sql, tuple(args))
-    cargs = [scoped_uid] if scoped_uid else ([int(staff_filter)] if staff_filter.isdigit() else [])
+        args.extend([like, like, like, like, like, like])
+    if section_type == "whatsapp":
+        where += " AND (l.platform='whatsapp' OR l.source ILIKE '%whatsapp%')"
+    elif section_type == "manual":
+        where += " AND NOT (l.platform='whatsapp' OR l.source ILIKE '%whatsapp%')"
 
+    count_sql = f"SELECT COUNT(*) c FROM leads l LEFT JOIN patients p ON p.id=l.patient_id LEFT JOIN users su ON su.id=l.assigned_to{where}"
+    total_count = db.q(count_sql, tuple(args), one=True)["c"]
+    total_pages = max(1, math.ceil(total_count / limit)) if limit else 1
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * limit
+
+    sql = base + where + f" ORDER BY {order_sql} LIMIT ? OFFSET ?"
+    page_args = list(args) + [limit, offset]
+    rows = db.q(sql, tuple(page_args))
+
+    cargs = [scoped_uid] if scoped_uid else ([int(staff_filter)] if staff_filter.isdigit() else [])
     c_where = " WHERE assigned_to=?" if cargs else ""
     c_res = db.q(f"""SELECT
         COUNT(*) AS c_all,
@@ -377,20 +622,169 @@ def leads():
         r["is_whatsapp"] = (r.get("platform") or "").lower() == "whatsapp" or "whatsapp" in (r.get("source") or "").lower()
     wa_leads = [r for r in rows if r["is_whatsapp"]]
     manual_leads = [r for r in rows if not r["is_whatsapp"]]
-    if section_type == "whatsapp":
-        rows = wa_leads
-    elif section_type == "manual":
-        rows = manual_leads
+
     staff = [] if scoped_uid else db.q(
         "SELECT id, username, full_name FROM users WHERE is_active=1 ORDER BY id")
+
+    start_idx = offset + 1 if total_count > 0 else 0
+    end_idx = min(offset + limit, total_count)
+
     return render_template("admin/leads.html", rows=rows, wa_leads=wa_leads, manual_leads=manual_leads,
                            view=view, counts=counts, section_type=section_type,
                            sources=[x["name"] for x in db.q(
                                "SELECT name FROM sources WHERE is_active=1 ORDER BY sort_order")],
                            today=h.today(), section="leads", staff=staff,
                            scoped=bool(scoped_uid), staff_filter=staff_filter,
-                           type_f=type_f, src_f=src_f, q=q, lead_types=h.LEAD_TYPES)
+                           type_f=type_f, src_f=src_f, q=q, lead_types=h.LEAD_TYPES,
+                           page=page, limit=limit, limit_arg=limit_arg,
+                           total_count=total_count, total_pages=total_pages,
+                           start_idx=start_idx, end_idx=end_idx,
+                           sort=sort_col, order=sort_order)
 
+
+@bp.route("/leads/<int:lid>/inline", methods=["POST"])
+@login_required
+def lead_inline(lid):
+    if not has_cap("leads_edit"):
+        return jsonify({"ok": False, "error": "Permission denied"}), 403
+
+    lead = db.q("""SELECT l.*, p.id pid, p.name pname FROM leads l
+        LEFT JOIN patients p ON p.id=l.patient_id WHERE l.id=?""", (lid,), one=True)
+    if not lead:
+        return jsonify({"ok": False, "error": "Lead not found"}), 404
+
+    if security.current_role() != "super_admin" and             (lead["assigned_to"] or 0) != session["admin_uid"] and lead["assigned_to"] is not None:
+        return jsonify({"ok": False, "error": "You are not assigned to this lead"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    field = (data.get("field") or "").strip().lower()
+    value = (data.get("value") or "").strip()
+
+    allowed = {
+        "name", "phone", "area", "whatsapp", "email",
+        "source", "interest", "status", "assigned_to",
+        "next_followup", "notes"
+    }
+    if field not in allowed:
+        return jsonify({"ok": False, "error": f"Field '{field}' cannot be edited inline"}), 400
+
+    display_value = value
+
+    if field == "name":
+        if not value:
+            return jsonify({"ok": False, "error": "Name cannot be empty"}), 400
+        db.q("UPDATE leads SET name=? WHERE id=?", (value, lid))
+        if lead.get("patient_id"):
+            db.q("UPDATE patients SET name=? WHERE id=?", (value, lead["patient_id"]))
+    elif field == "phone":
+        if not value:
+            return jsonify({"ok": False, "error": "Phone number cannot be empty"}), 400
+        db.q("UPDATE leads SET phone=? WHERE id=?", (value, lid))
+        if lead.get("patient_id"):
+            db.q("UPDATE patients SET phone=? WHERE id=?", (value, lead["patient_id"]))
+    elif field == "area":
+        db.q("UPDATE leads SET area=? WHERE id=?", (value, lid))
+        if lead.get("patient_id"):
+            db.q("UPDATE patients SET area=? WHERE id=?", (value, lead["patient_id"]))
+    elif field == "whatsapp":
+        db.q("UPDATE leads SET whatsapp=? WHERE id=?", (value, lid))
+        if lead.get("patient_id"):
+            db.q("UPDATE patients SET whatsapp=? WHERE id=?", (value, lead["patient_id"]))
+    elif field == "email":
+        db.q("UPDATE leads SET email=? WHERE id=?", (value, lid))
+        if lead.get("patient_id"):
+            db.q("UPDATE patients SET email=? WHERE id=?", (value, lead["patient_id"]))
+    elif field == "source":
+        db.q("UPDATE leads SET source=? WHERE id=?", (value, lid))
+    elif field == "interest":
+        db.q("UPDATE leads SET interest=? WHERE id=?", (value, lid))
+    elif field == "status":
+        valid_statuses = ["new", "contacted", "followup", "appointment", "assessment", "converted", "hold", "lost", "not_interested"]
+        if value.lower() not in valid_statuses:
+            return jsonify({"ok": False, "error": "Invalid status"}), 400
+        val = value.lower()
+        db.q("UPDATE leads SET status=? WHERE id=?", (val, lid))
+        display_value = val.title()
+    elif field == "assigned_to":
+        val = int(value) if value and value.isdigit() else None
+        if val:
+            staff_row = db.q("SELECT id, full_name, username FROM users WHERE id=?", (val,), one=True)
+            if not staff_row:
+                return jsonify({"ok": False, "error": "Staff member not found"}), 400
+            display_value = staff_row.get("full_name") or staff_row.get("username")
+        else:
+            display_value = "Unassigned"
+        db.q("UPDATE leads SET assigned_to=? WHERE id=?", (val, lid))
+    elif field == "next_followup":
+        val = value if value else None
+        db.q("UPDATE leads SET next_followup=? WHERE id=?", (val, lid))
+    elif field == "notes":
+        db.q("UPDATE leads SET notes=? WHERE id=?", (value, lid))
+
+    record("lead_inline_edit", f"id={lid} field={field} val={value[:50]}", entity_type="lead", entity_id=lid)
+    return jsonify({"ok": True, "field": field, "value": value, "display_value": display_value})
+
+
+@bp.route("/leads/bulk-status", methods=["POST"])
+@login_required
+def leads_bulk_status():
+    if not has_cap("leads_edit"):
+        abort(403)
+    status = request.form.get("status", "").strip().lower()
+    valid_statuses = ["new", "contacted", "followup", "appointment", "assessment", "hold", "lost"]
+    if status not in valid_statuses:
+        flash("Invalid status selected.", "err")
+        return redirect(url_for("admin.leads"))
+    lead_ids = request.form.getlist("lead_ids")
+    updated = 0
+    for lid in lead_ids:
+        if lid.isdigit():
+            db.q("UPDATE leads SET status=? WHERE id=?", (status, int(lid)))
+            updated += 1
+    record("leads_bulk_status", f"status={status} count={updated}")
+    flash(f"Updated status to '{status.title()}' for {updated} lead(s).", "ok")
+    return redirect(url_for("admin.leads"))
+
+
+@bp.route("/leads/<int:lid>/history-json")
+@login_required
+def lead_history_json(lid):
+    if not has_cap("leads"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+    lead = db.q("""SELECT l.id,
+        COALESCE(NULLIF(l.name, ''), p.name, '') name,
+        COALESCE(NULLIF(l.phone, ''), p.phone, '') phone,
+        l.status, l.source, l.created_at
+        FROM leads l LEFT JOIN patients p ON p.id=l.patient_id WHERE l.id=?""", (lid,), one=True)
+    if not lead:
+        return jsonify({"ok": False, "error": "Lead not found"}), 404
+    history = db.q("""SELECT lh.*, u.full_name staff_name, u.username staff_user
+        FROM lead_history lh
+        LEFT JOIN users u ON u.id=lh.logged_by
+        WHERE lh.lead_id=?
+        ORDER BY COALESCE(lh.interaction_at, lh.created_at) DESC, lh.id DESC""", (lid,))
+    items = []
+    for h_row in history:
+        items.append({
+            "id": h_row["id"],
+            "interaction_type": h_row.get("interaction_type") or "other",
+            "summary": h_row.get("summary") or h_row.get("note") or "",
+            "outcome": h_row.get("outcome") or "",
+            "due_date": str(h_row["due_date"]) if h_row.get("due_date") else None,
+            "staff": h_row.get("staff_name") or h_row.get("staff_user") or "Staff",
+            "date": str(h_row.get("interaction_at") or h_row.get("created_at") or "")[:16]
+        })
+    return jsonify({
+        "ok": True,
+        "lead": {
+            "id": lead["id"],
+            "name": lead["name"],
+            "phone": lead["phone"],
+            "status": lead["status"],
+            "source": lead["source"]
+        },
+        "history": items
+    })
 
 @bp.route("/leads/new", methods=["POST"])
 @login_required
@@ -595,6 +989,8 @@ def lead_interaction(lid):
     next_date = f.get("next_followup_date", "").strip() or None
 
     if not summary:
+        if request.is_json or request.headers.get("Accept") == "application/json" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"ok": False, "error": "Please provide a brief interaction summary."}), 400
         flash("Please provide a brief interaction summary.", "err")
         return redirect(url_for("admin.lead_detail", lid=lid))
 
@@ -629,6 +1025,8 @@ def lead_interaction(lid):
 
     record("lead_interaction", f"lead={lid} type={comm_type} outcome={outcome}",
            entity_type="lead", entity_id=lid)
+    if request.is_json or request.headers.get("Accept") == "application/json" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"ok": True, "message": "Conversation entry recorded."})
     flash("Conversation entry recorded.", "ok")
     return redirect(url_for("admin.lead_detail", lid=lid))
 
@@ -802,7 +1200,8 @@ def followup_new():
          f.get("note", "").strip(), h.now()))
     record("followup_create", f"patient={pid}", entity_type="patient", entity_id=int(pid))
     flash("Follow-up added.", "ok")
-    return redirect(url_for("admin.followups"))
+    ret = f.get("next") or request.referrer or url_for("admin.followups")
+    return redirect(ret)
 
 
 @bp.route("/followups/<int:fid>/complete", methods=["POST"])

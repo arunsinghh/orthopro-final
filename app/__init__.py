@@ -84,7 +84,7 @@ def create_app(config_name=None):
         def csrf_field():
             return Markup(
                 f'<input type="hidden" name="csrf_token" value="{generate_csrf()}"/>')
-        return dict(csrf_field=csrf_field)
+        return dict(csrf_field=csrf_field, csrf_token=generate_csrf)
 
     # ------------------------------------------------ blueprints
     # Gallery self-seeds from bundled assets (idempotent; never blocks startup)

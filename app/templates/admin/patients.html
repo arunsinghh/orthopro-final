@@ -1,178 +1,429 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}Patients{% endblock %}
+{% block title %}Patients (Spreadsheet){% endblock %}
+
 {% block content %}
-<div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-  <div>
-    <h1 style="margin:0">👥 Patients</h1>
-    <p class="muted" style="margin:4px 0 0">
-      Master clinical directory: manage patient profiles, prosthetic &amp; orthotic pipelines, and treatment stages.
-    </p>
+<div class="excel-view-container">
+  <!-- Top Bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="margin:0;font-size:1.45rem;display:flex;align-items:center;gap:10px">
+        <span>👥 Patients</span>
+        <span class="badge badge-w" style="font-size:.85rem;background:#0e7490;color:#fff">{{ total_count }}</span>
+      </h1>
+      <p class="muted" style="margin:3px 0 0;font-size:.85rem">
+        Master clinical directory: click any cell to edit directly. Tab to navigate, Enter to save.
+      </p>
+    </div>
+    <div>
+      <button type="button" data-open-modal="add-patient-modal" onclick="openAddPatientModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.9rem;padding:8px 16px;border-radius:8px">
+        <b>➕ Add Patient</b>
+      </button>
+    </div>
   </div>
-  <div>
-    <button type="button" data-open-modal="add-patient-modal" onclick="openAddPatientModal()" class="btn btn-p" style="background:#f97316;border-color:#ea580c;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,0.35);font-size:.92rem;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;border-radius:8px">
-      <span style="font-size:1.1rem;font-weight:700">➕</span>
-      <span>Add Patient</span>
-    </button>
+
+  <!-- Add Patient Modal Overlay -->
+  <div id="add-patient-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
+    <div class="card" style="width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
+        <h2 style="margin:0;font-size:1.25rem;display:flex;align-items:center;gap:8px">
+          <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
+          Register New Patient
+        </h2>
+        <button type="button" data-close-modal="add-patient-modal" onclick="closeAddPatientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
+      </div>
+
+      <form method="post" action="/admin/patients/new" class="fgrid">
+        {{ csrf_field() }}
+        <div><label>Patient Full Name *</label><input name="name" required placeholder="e.g. Ramesh Kumar"></div>
+        <div><label>Phone Number</label><input name="phone" placeholder="+91 98765 43210"></div>
+        <div><label>Area / City</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
+        <div><label>Lead / Referral Source</label>
+          <select name="source">
+            {% for s in sources %}<option>{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="full"><label>Clinical / Initial Note</label>
+          <textarea name="notes" rows="3" placeholder="e.g. Below-knee prosthesis evaluation, accident 6 months ago..." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
+        </div>
+        <div class="full" style="font-size:.82rem;color:var(--mut);margin-top:6px">
+          💡 Serial number is assigned automatically ({{ today[2:4] if (today is defined and today|length >= 4) else '26' }}{{ today[5:7] if (today is defined and today|length >= 7) else '10' }} + monthly patient index).
+        </div>
+        <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+          <button type="button" class="btn btn-o" data-close-modal="add-patient-modal" onclick="closeAddPatientModal()">Cancel</button>
+          <button type="submit" class="btn btn-p" style="background:#f97316;border-color:#ea580c">+ Register Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Filter Pills -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:10px 16px;border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.03)">
+    <span class="muted" style="font-size:0.8rem;font-weight:700;letter-spacing:.05em;margin-right:4px">DIRECTORY:</span>
+    <a class="btn btn-xs {{ 'btn-p' if (not stage_f or stage_f == 'all') and not due_f else 'btn-o' }}" href="/admin/patients?stage=all&q={{ q }}&limit={{ limit_arg }}" style="border-radius:99px;padding:4px 12px">
+      👥 All Patients <span class="badge {{ 'badge-w' if (not stage_f or stage_f == 'all') and not due_f else '' }}">{{ counts.all }}</span>
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if stage_f == 'active' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if stage_f == 'active' else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}" href="/admin/patients?stage={{ 'all' if stage_f == 'active' else 'active' }}&q={{ q }}&limit={{ limit_arg }}">
+      ⚡ Active Pipeline <span class="badge" style="{{ 'background:#fff;color:#0e7490' if stage_f == 'active' else 'background:#0e7490;color:#fff' }}">{{ counts.active }}</span>
+      {% if stage_f == 'active' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if stage_f == 'completed' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if stage_f == 'completed' else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/patients?stage={{ 'all' if stage_f == 'completed' else 'completed' }}&q={{ q }}&limit={{ limit_arg }}">
+      ✅ Completed <span class="badge" style="{{ 'background:#fff;color:#16a34a' if stage_f == 'completed' else 'background:#16a34a;color:#fff' }}">{{ counts.completed }}</span>
+      {% if stage_f == 'completed' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+    <a class="btn btn-xs {{ 'btn-p' if due_f == '1' else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#dc2626;border-color:#dc2626;color:#fff' if due_f == '1' else 'color:#b91c1c;border-color:#fecaca;background:#fef2f2' }}" href="/admin/patients?due={{ '0' if due_f == '1' else '1' }}&stage={{ stage_f }}&q={{ q }}&limit={{ limit_arg }}">
+      💳 Balance Due <span class="badge" style="{{ 'background:#fff;color:#dc2626' if due_f == '1' else 'background:#dc2626;color:#fff' }}">{{ counts.due }}</span>
+      {% if due_f == '1' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
+    </a>
+  </div>
+
+  <!-- Excel Toolbar (Search, Filter, Rows, Columns) -->
+  <div class="excel-toolbar">
+    <!-- Search Form -->
+    <form method="get" action="/admin/patients" class="excel-toolbar-group" style="flex:1;min-width:260px">
+      {% if stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
+      {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
+      {% if status_f %}<input type="hidden" name="status" value="{{ status_f }}">{% endif %}
+      {% if limit %}<input type="hidden" name="limit" value="{{ limit_arg }}">{% endif %}
+      {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+      {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+
+      <div class="excel-search-box" style="flex:1">
+        <span class="excel-search-icon">🔍</span>
+        <input type="search" name="q" value="{{ q }}" placeholder="Search Serial #, Patient Name, Phone, Area..." autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-xs btn-p" style="padding:7px 14px">Search</button>
+      {% if q or stage_f or due_f or status_f %}
+      <a href="/admin/patients?limit={{ limit_arg }}" class="btn btn-xs btn-o" style="padding:7px 10px">Clear</a>
+      {% endif %}
+    </form>
+
+    <!-- Filters and Display Options -->
+    <div class="excel-toolbar-group">
+      <!-- Stage Filter -->
+      <form method="get" action="/admin/patients" style="display:inline-flex;margin:0">
+        <input type="hidden" name="q" value="{{ q }}">
+        {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
+        {% if status_f %}<input type="hidden" name="status" value="{{ status_f }}">{% endif %}
+        <input type="hidden" name="limit" value="{{ limit_arg }}">
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+        <select name="stage" class="excel-select-sm" onchange="this.form.submit()" title="Filter by Pipeline Stage">
+          <option value="">All Stages ({{ stages|length }})</option>
+          {% for k, sname in stages.items() %}
+          <option value="{{ k }}" {{ 'selected' if stage_f == k }}>{{ sname }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <!-- Rows Per Page -->
+      <form method="get" action="/admin/patients" style="display:inline-flex;align-items:center;gap:4px;margin:0">
+        <input type="hidden" name="q" value="{{ q }}">
+        {% if stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
+        {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
+        {% if status_f %}<input type="hidden" name="status" value="{{ status_f }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+        <span class="muted" style="font-size:0.8rem">Rows:</span>
+        <select name="limit" class="excel-select-sm" onchange="this.form.submit()" title="Rows per page">
+          <option value="10" {{ 'selected' if limit_arg == '10' }}>10</option>
+          <option value="25" {{ 'selected' if limit_arg == '25' }}>25</option>
+          <option value="50" {{ 'selected' if limit_arg == '50' or not limit_arg }}>50</option>
+          <option value="100" {{ 'selected' if limit_arg == '100' }}>100</option>
+          <option value="200" {{ 'selected' if limit_arg == '200' }}>200</option>
+          <option value="all" {{ 'selected' if limit_arg == 'all' }}>All</option>
+        </select>
+      </form>
+
+      <!-- Column Visibility Toggle -->
+      <div class="excel-dropdown" id="col-toggle-dropdown">
+        <button type="button" class="btn btn-xs btn-o" id="col-toggle-btn" style="padding:7px 11px">
+          👁 Columns ▾
+        </button>
+        <div class="excel-dropdown-menu" id="col-toggle-menu">
+          <div style="font-weight:700;font-size:0.78rem;color:#475569;margin-bottom:6px;text-transform:uppercase">Visible Columns</div>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="serial" checked> Patient ID</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="name" checked> Patient Name</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="phone" checked> Phone</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="area" checked> Location</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="age" checked> Age</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="gender" checked> Gender</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="status" checked> Status</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="stage" checked> Treatment / Stage</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="source" checked> Source</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="balance" checked> Balance Due</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="last_visit" checked> Last Follow-up</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="next_followup" checked> Next Follow-up</label>
+          <label class="excel-dropdown-item"><input type="checkbox" data-col-toggle="actions" checked> Actions</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excel Spreadsheet Table Wrap -->
+  <div class="excel-grid-wrap">
+    <table class="excel-grid" id="patients-excel-grid">
+      <thead>
+        <tr>
+          <th class="excel-col-chk excel-sticky-col no-sort">
+            <input type="checkbox" class="excel-select-all-chk" id="select-all-patients" title="Select all rows">
+          </th>
+          <th data-col="serial" class="excel-sticky-col {{ 'sort-active' if sort == 'serial_no' }}" onclick="sortTable('serial_no')">
+            Patient ID <span class="excel-sort-arrow">{{ '▲' if sort == 'serial_no' and order == 'asc' else ('▼' if sort == 'serial_no' else '') }}</span>
+          </th>
+          <th data-col="name" class="{{ 'sort-active' if sort == 'name' }}" onclick="sortTable('name')">
+            Patient Name <span class="excel-sort-arrow">{{ '▲' if sort == 'name' and order == 'asc' else ('▼' if sort == 'name' else '') }}</span>
+          </th>
+          <th data-col="phone" class="{{ 'sort-active' if sort == 'phone' }}" onclick="sortTable('phone')">
+            Phone <span class="excel-sort-arrow">{{ '▲' if sort == 'phone' and order == 'asc' else ('▼' if sort == 'phone' else '') }}</span>
+          </th>
+          <th data-col="area" class="{{ 'sort-active' if sort == 'area' }}" onclick="sortTable('area')">
+            Location <span class="excel-sort-arrow">{{ '▲' if sort == 'area' and order == 'asc' else ('▼' if sort == 'area' else '') }}</span>
+          </th>
+          <th data-col="age" class="{{ 'sort-active' if sort == 'age' }}" onclick="sortTable('age')">
+            Age <span class="excel-sort-arrow">{{ '▲' if sort == 'age' and order == 'asc' else ('▼' if sort == 'age' else '') }}</span>
+          </th>
+          <th data-col="gender" class="{{ 'sort-active' if sort == 'gender' }}" onclick="sortTable('gender')">
+            Gender <span class="excel-sort-arrow">{{ '▲' if sort == 'gender' and order == 'asc' else ('▼' if sort == 'gender' else '') }}</span>
+          </th>
+          <th data-col="status" class="{{ 'sort-active' if sort == 'status' }}" onclick="sortTable('status')">
+            Status <span class="excel-sort-arrow">{{ '▲' if sort == 'status' and order == 'asc' else ('▼' if sort == 'status' else '') }}</span>
+          </th>
+          <th data-col="stage" class="{{ 'sort-active' if sort == 'pipeline_stage' }}" onclick="sortTable('pipeline_stage')">
+            Treatment / Stage <span class="excel-sort-arrow">{{ '▲' if sort == 'pipeline_stage' and order == 'asc' else ('▼' if sort == 'pipeline_stage' else '') }}</span>
+          </th>
+          <th data-col="source" class="{{ 'sort-active' if sort == 'source' }}" onclick="sortTable('source')">
+            Source <span class="excel-sort-arrow">{{ '▲' if sort == 'source' and order == 'asc' else ('▼' if sort == 'source' else '') }}</span>
+          </th>
+          <th data-col="balance" class="{{ 'sort-active' if sort == 'balance' }}" onclick="sortTable('balance')">
+            Balance <span class="excel-sort-arrow">{{ '▲' if sort == 'balance' and order == 'asc' else ('▼' if sort == 'balance' else '') }}</span>
+          </th>
+          <th data-col="last_visit" class="no-sort">
+            Last Follow-up
+          </th>
+          <th data-col="next_followup" class="{{ 'sort-active' if sort == 'next_followup' }}" onclick="sortTable('next_followup')">
+            Next Follow-up <span class="excel-sort-arrow">{{ '▲' if sort == 'next_followup' and order == 'asc' else ('▼' if sort == 'next_followup' else '') }}</span>
+          </th>
+          <th data-col="actions" class="no-sort" style="text-align:center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if rows %}
+        {% for p in rows %}
+        <tr class="excel-row" id="patient-row-{{ p.id }}" data-patient-id="{{ p.id }}">
+          <!-- Checkbox -->
+          <td class="excel-col-chk excel-sticky-col">
+            <input type="checkbox" class="excel-row-chk patient-chk" value="{{ p.id }}">
+          </td>
+
+          <!-- Patient ID -->
+          <td data-col="serial" class="excel-sticky-col" style="font-weight:700;color:#0e7490">
+            <a href="/admin/patients/{{ p.id }}" style="color:inherit;text-decoration:none">#{{ p.serial_no or p.id }}</a>
+          </td>
+
+          <!-- Name (Inline Editable) -->
+          <td data-col="name" class="excel-cell-editable" data-id="{{ p.id }}" data-field="name" data-type="text" data-value="{{ p.name }}" title="Click to edit name">
+            <a href="/admin/patients/{{ p.id }}" style="color:inherit;text-decoration:none"><b>{{ p.name }}</b></a>
+          </td>
+
+          <!-- Phone (Inline Editable) -->
+          <td data-col="phone" class="excel-cell-editable" data-id="{{ p.id }}" data-field="phone" data-type="text" data-value="{{ p.phone or '' }}" title="Click to edit phone">
+            {{ p.phone or '—' }}
+          </td>
+
+          <!-- Location (Inline Editable) -->
+          <td data-col="area" class="excel-cell-editable" data-id="{{ p.id }}" data-field="area" data-type="text" data-value="{{ p.area or '' }}" title="Click to edit location">
+            {{ p.area or '—' }}
+          </td>
+
+          <!-- Age (Inline Editable) -->
+          <td data-col="age" class="excel-cell-editable" data-id="{{ p.id }}" data-field="age" data-type="text" data-value="{{ p.age or '' }}" title="Click to edit age">
+            {{ p.age or '—' }}
+          </td>
+
+          <!-- Gender (Inline Editable Dropdown) -->
+          {% set gender_options = ['Male', 'Female', 'Other'] %}
+          <td data-col="gender" class="excel-cell-editable" data-id="{{ p.id }}" data-field="gender" data-type="select" data-options='{{ gender_options|tojson }}' data-value="{{ p.gender or '' }}" title="Click to change gender">
+            {{ p.gender or '—' }}
+          </td>
+
+          <!-- Status (Inline Editable Dropdown) -->
+          {% set status_options = ['active', 'completed', 'archived', 'inactive'] %}
+          <td data-col="status" class="excel-cell-editable" data-id="{{ p.id }}" data-field="status" data-type="select" data-options='{{ status_options|tojson }}' data-value="{{ p.status or 'active' }}" title="Click to change status">
+            <span class="tag {{ 'tag-ok' if p.status == 'completed' else ('tag-pen' if p.status == 'active' else 'tag-new') }}">
+              {{ (p.status or 'active')|capitalize }}
+            </span>
+          </td>
+
+          <!-- Pipeline Stage (Inline Editable Dropdown) -->
+          <td data-col="stage" class="excel-cell-editable" data-id="{{ p.id }}" data-field="pipeline_stage" data-type="select" data-options='{{ stage_options|tojson }}' data-value="{{ p.pipeline_stage or '' }}" title="Click to change treatment stage">
+            {% if p.pipeline_stage %}
+            <span class="tag {{ 'tag-ok' if p.pipeline_stage == 'completed' else 'tag-pen' }}" style="font-size:0.78rem">
+              {{ stages.get(p.pipeline_stage, p.pipeline_stage) }}
+            </span>
+            {% else %}
+            <span class="tag tag-new" style="font-size:0.78rem">None</span>
+            {% endif %}
+          </td>
+
+          <!-- Source (Inline Editable Dropdown) -->
+          <td data-col="source" class="excel-cell-editable" data-id="{{ p.id }}" data-field="source" data-type="select" data-options='{{ sources|tojson }}' data-value="{{ p.source or 'Walk-in' }}" title="Click to change source">
+            {{ p.source or '—' }}
+          </td>
+
+          <!-- Balance Due -->
+          <td data-col="balance">
+            {% set bal = (p.total_amount | float) - (p.advance_amount | float) %}
+            {% if bal > 0 %}
+            <span class="tag tag-due" style="font-size:0.78rem;font-weight:700">₹{{ '%0.0f' | format(bal) }}</span>
+            {% elif p.total_amount and (p.total_amount | float) > 0 %}
+            <span class="tag tag-ok" style="font-size:0.78rem">✓ Paid</span>
+            {% else %}
+            <span class="muted" style="font-size:0.8rem">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Last Follow-up / Visit -->
+          <td data-col="last_visit">
+            <span class="muted" style="font-size:0.82rem">
+              {{ p.fu_last_date[:10] if p.fu_last_date else (p.created_at[:10] if p.created_at else '—') }}
+            </span>
+          </td>
+
+          <!-- Next Follow-up (Inline Editable Date) -->
+          {% set fu_val = (p.next_followup or p.fu_next or '')[:10] %}
+          <td data-col="next_followup" class="excel-cell-editable" data-id="{{ p.id }}" data-field="next_followup" data-type="date" data-value="{{ fu_val }}" title="Click to set next follow-up date">
+            <span style="{{ 'color:#ea580c;font-weight:600' if fu_val else 'color:#94a3b8' }}">
+              {{ fu_val or '—' }}
+            </span>
+          </td>
+
+          <!-- Action Buttons -->
+          <td data-col="actions" style="text-align:center;white-space:nowrap">
+            <div style="display:inline-flex;gap:4px;align-items:center">
+              <!-- Open Profile -->
+              <a href="/admin/patients/{{ p.id }}" class="excel-btn-icon" title="View Patient Profile">
+                👁
+              </a>
+
+              <!-- Add Follow-up Note -->
+              <button type="button" class="excel-btn-icon" onclick="openPatientFollowupModal('{{ p.id }}', '{{ p.name|e }}')" title="Add Follow-up / Clinical Note">
+                💬
+              </button>
+
+              <!-- View History -->
+              <button type="button" class="excel-btn-icon" data-view-history="patient" data-id="{{ p.id }}" data-name="{{ p.name|e }}" title="View Follow-up History">
+                📜
+              </button>
+
+              <!-- Phone Call -->
+              {% if p.phone %}
+              <a href="tel:{{ p.phone }}" class="excel-btn-icon" title="Call {{ p.phone }}">
+                📞
+              </a>
+
+              <!-- WhatsApp -->
+              {% set wa = (p.phone or '')|replace('+','')|replace(' ','')|replace('-','') %}
+              {% if wa %}
+              {% set wa_text = "Hello " ~ (p.name or '') ~ ", contacting you from OrthoPro Artificial Limbs Center. How can we assist you today?" %}
+              <a href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" target="_blank" rel="noopener" class="excel-btn-icon" title="WhatsApp {{ p.phone }}" style="color:#16a34a">
+                💬
+              </a>
+              {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="14" style="text-align:center;padding:36px 20px;color:var(--mut)">
+            <div style="font-size:1.8rem;margin-bottom:6px">📭</div>
+            <b>{{ 'No patients match that search.' if q else 'No patients found in this category.' }}</b>
+            <p style="margin:6px 0 12px;font-size:0.85rem">Try clearing filters or registering a new patient.</p>
+            {% if q or stage_f or due_f or status_f %}
+            <a class="btn btn-xs btn-o" href="/admin/patients?limit={{ limit_arg }}">Clear Filters</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Excel Pagination Bar -->
+  <div class="excel-footer excel-pagination-bar">
+    <div>
+      Showing <b>{{ start_idx }}</b>–<b>{{ end_idx }}</b> of <b>{{ total_count }}</b> Patients
+    </div>
+
+    <div class="excel-pagination-controls">
+      {% set base_url = '/admin/patients?q=' ~ q ~ '&stage=' ~ stage_f ~ '&due=' ~ due_f ~ '&status=' ~ status_f ~ '&limit=' ~ limit_arg ~ '&sort=' ~ sort ~ '&order=' ~ order %}
+      <a href="{{ base_url }}&page=1" class="excel-page-btn {{ 'disabled' if page <= 1 else '' }}">« First</a>
+      <a href="{{ base_url }}&page={{ page - 1 }}" class="excel-page-btn {{ 'disabled' if page <= 1 else '' }}">‹ Prev</a>
+      <span class="excel-page-info">Page {{ page }} of {{ total_pages }}</span>
+      <a href="{{ base_url }}&page={{ page + 1 }}" class="excel-page-btn {{ 'disabled' if page >= total_pages else '' }}">Next ›</a>
+      <a href="{{ base_url }}&page={{ total_pages }}" class="excel-page-btn {{ 'disabled' if page >= total_pages else '' }}">Last »</a>
+    </div>
   </div>
 </div>
 
-<!-- Add Patient Modal Overlay -->
-<div id="add-patient-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px">
-  <div class="card" style="width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);background:#fff;margin:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
-      <h2 style="margin:0;font-size:1.25rem;display:flex;align-items:center;gap:8px">
-        <span style="background:#f97316;color:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.9rem">➕</span>
-        Register New Patient
-      </h2>
-      <button type="button" data-close-modal="add-patient-modal" onclick="closeAddPatientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mut);line-height:1;padding:0 6px">&times;</button>
+<!-- Conversation History Modal -->
+<div id="excel-history-modal" class="excel-modal-overlay" style="display:none">
+  <div class="excel-modal-card">
+    <div class="excel-modal-header">
+      <h3 id="excel-hist-title" style="margin:0;font-size:1.15rem">📜 Follow-up History</h3>
+      <button type="button" id="excel-hist-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8">&times;</button>
     </div>
+    <div class="excel-modal-body" id="excel-hist-content">
+      <div style="text-align:center;padding:24px;color:#64748b">Loading history…</div>
+    </div>
+  </div>
+</div>
 
-    <form method="post" action="/admin/patients/new" class="fgrid">
+<!-- Quick Patient Follow-up Modal -->
+<div id="patient-followup-modal" class="excel-modal-overlay" style="display:none">
+  <div class="excel-modal-card" style="max-width:480px">
+    <div class="excel-modal-header">
+      <h3 id="pf-title" style="margin:0;font-size:1.15rem">💬 Add Patient Follow-up</h3>
+      <button type="button" onclick="closePatientFollowupModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8">&times;</button>
+    </div>
+    <form method="post" action="/admin/followups/new" class="excel-modal-body">
       {{ csrf_field() }}
-      <div><label>Patient Full Name *</label><input name="name" required placeholder="e.g. Ramesh Kumar"></div>
-      <div><label>Phone Number</label><input name="phone" placeholder="+91 98765 43210"></div>
-      <div><label>Area / City</label><input name="area" placeholder="e.g. South Delhi, Noida"></div>
-      <div><label>Lead / Referral Source</label>
-        <select name="source">
-          {% for s in (sources if sources is defined and sources else ['Walk-in', 'WhatsApp', 'Doctor Referral', 'Patient Referral', 'Website', 'Other']) %}<option>{{ s }}</option>{% endfor %}
-        </select>
+      <input type="hidden" name="patient_id" id="pf-patient-id" value="">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:0.83rem;font-weight:600;margin-bottom:4px;color:#334155">Scheduled Due Date</label>
+        <input type="date" name="due_date" value="{{ today }}" class="excel-inline-input" style="width:100%" required>
       </div>
-      <div class="full"><label>Clinical / Initial Note</label>
-        <textarea name="notes" rows="3" placeholder="e.g. Below-knee prosthesis evaluation, accident 6 months ago..." style="padding:10px 12px;font-size:.9rem;border-radius:8px"></textarea>
+
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:0.83rem;font-weight:600;margin-bottom:4px;color:#334155">Follow-up / Clinical Note</label>
+        <textarea name="note" rows="3" placeholder="e.g. Call patient to check socket fit and comfort..." style="width:100%;padding:8px 10px;font-size:0.88rem;border:1px solid #cbd5e1;border-radius:6px;resize:vertical" required></textarea>
       </div>
-      <div class="full" style="font-size:.82rem;color:var(--mut);margin-top:6px">
-        💡 Serial number is assigned automatically ({{ today[2:4] if (today is defined and today|length >= 4) else '26' }}{{ today[5:7] if (today is defined and today|length >= 7) else '10' }} + monthly patient index).
-      </div>
-      <div class="full" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button type="button" class="btn btn-o" data-close-modal="add-patient-modal" onclick="closeAddPatientModal()">Cancel</button>
-        <button type="submit" class="btn btn-p" style="background:#f97316;border-color:#ea580c">+ Register Patient</button>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn btn-xs btn-o" onclick="closePatientFollowupModal()">Cancel</button>
+        <button type="submit" class="btn btn-xs btn-p" style="background:#0e7490;border-color:#0e7490">Save Follow-up</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modern Filter & Search Panel -->
-<div class="card" style="padding:14px 18px;margin-bottom:16px;background:#fff;border-radius:12px">
-  <!-- Top Category Filter Pills -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
-    <span class="muted" style="font-size:0.83em;font-weight:700;letter-spacing:.05em;margin-right:4px">DIRECTORY:</span>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is not defined or not stage_f) and (due_f is not defined or not due_f) else 'btn-o' }}" href="/admin/patients?q={{ q if q is defined and q else '' }}" style="border-radius:99px;padding:4px 12px">
-      👥 All Patients <span class="badge {{ 'badge-w' if (stage_f is not defined or not stage_f) and (due_f is not defined or not due_f) else '' }}">{{ counts.all if (counts is defined and counts and counts.all is defined) else (rows|length if rows else 0) }}</span>
-    </a>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is defined and stage_f=='active') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#0e7490;border-color:#0e7490;color:#fff' if (stage_f is defined and stage_f=='active') else 'color:#0e7490;border-color:#a5f3fc;background:#ecfeff' }}" href="/admin/patients?stage={{ 'all' if (stage_f is defined and stage_f=='active') else 'active' }}&q={{ q if q is defined and q else '' }}">
-      ⚡ Active Pipeline <span class="badge" style="{{ 'background:#fff;color:#0e7490' if (stage_f is defined and stage_f=='active') else 'background:#0e7490;color:#fff' }}">{{ counts.active if (counts is defined and counts and counts.active is defined) else 0 }}</span>
-      {% if stage_f is defined and stage_f=='active' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
-    </a>
-    <a class="btn btn-xs {{ 'btn-p' if (stage_f is defined and stage_f=='completed') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#16a34a;border-color:#16a34a;color:#fff' if (stage_f is defined and stage_f=='completed') else 'color:#15803d;border-color:#bbf7d0;background:#f0fdf4' }}" href="/admin/patients?stage={{ 'all' if (stage_f is defined and stage_f=='completed') else 'completed' }}&q={{ q if q is defined and q else '' }}">
-      ✅ Completed <span class="badge" style="{{ 'background:#fff;color:#16a34a' if (stage_f is defined and stage_f=='completed') else 'background:#16a34a;color:#fff' }}">{{ counts.completed if (counts is defined and counts and counts.completed is defined) else 0 }}</span>
-      {% if stage_f is defined and stage_f=='completed' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
-    </a>
-    <a class="btn btn-xs {{ 'btn-p' if (due_f is defined and due_f=='1') else 'btn-o' }}" style="border-radius:99px;padding:4px 12px;{{ 'background:#dc2626;border-color:#dc2626;color:#fff' if (due_f is defined and due_f=='1') else 'color:#b91c1c;border-color:#fecaca;background:#fef2f2' }}" href="/admin/patients?due={{ '0' if (due_f is defined and due_f=='1') else '1' }}&q={{ q if q is defined and q else '' }}">
-      💳 Balance Due <span class="badge" style="{{ 'background:#fff;color:#dc2626' if (due_f is defined and due_f=='1') else 'background:#dc2626;color:#fff' }}">{{ counts.due if (counts is defined and counts and counts.due is defined) else 0 }}</span>
-      {% if due_f is defined and due_f=='1' %}<span style="margin-left:4px;font-size:0.85em">✕</span>{% endif %}
-    </a>
-  </div>
-
-  <!-- Search & Stage Filters -->
-  <form method="get" action="/admin/patients" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    {% if stage_f is defined and stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
-    {% if due_f is defined and due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
-    <div style="flex:2;min-width:220px">
-      <input type="search" name="q" value="{{ q if q is defined and q else '' }}" placeholder="🔍 Search by serial # (e.g. 26091), patient name, phone, area..." style="padding:7px 12px;font-size:.88rem;border-radius:8px">
-    </div>
-    <div style="flex:1;min-width:180px">
-      <select name="stage" style="padding:7px 12px;font-size:.88rem;border-radius:8px" onchange="this.form.submit()">
-        <option value="">All Stages ({{ stages|length if stages is defined and stages else 0 }})</option>
-        {% for k, name in (stages.items() if (stages is defined and stages) else []) %}
-        <option value="{{ k }}" {{ 'selected' if (stage_f is defined and stage_f==k) }}>{{ name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <button class="btn btn-xs btn-p" type="submit" style="padding:7px 16px;border-radius:8px">Search</button>
-    {% if q or stage_f or due_f %}
-    <a class="btn btn-xs btn-o" href="/admin/patients" style="padding:7px 12px;border-radius:8px">Clear</a>
-    {% endif %}
-  </form>
-</div>
-
-<!-- Header Count -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 4px 10px;flex-wrap:wrap;gap:8px">
-  <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px">
-    <span>{{ ('Results for “' ~ q ~ '”') if q else 'Patient Directory' }}</span>
-    <span class="badge badge-w" style="font-size:.85rem">{{ rows|length }}</span>
-  </h3>
-</div>
-
-<!-- Patients List -->
-{% for p in rows %}
-<div class="card" style="padding:16px 20px;margin-bottom:12px;border-left:5px solid {{ '#16a34a' if p.pipeline_stage=='completed' else '#0e7490' }};border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-  <!-- Serial Number -->
-  <div style="min-width:85px">
-    <span style="font-size:1.15rem;font-weight:800;color:#0e7490;display:block">#{{ p.serial_no }}</span>
-    <span class="muted" style="font-size:.75rem">{{ p.created_at[:10] if p.created_at else '' }}</span>
-  </div>
-
-  <!-- Patient Details -->
-  <div style="flex:1;min-width:240px">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <a href="/admin/patients/{{ p.id }}" style="font-size:1.1rem;font-weight:700;color:var(--dark)">{{ p.name }}</a>
-      {% if p.phone %}<span class="muted" style="font-weight:600">{{ p.phone }}</span>{% endif %}
-    </div>
-
-    <div style="margin:4px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-      {% if p.area %}<span class="muted" style="font-size:.83rem">📍 {{ p.area }}</span>{% endif %}
-      {% if p.notes %}<span class="muted" style="font-size:.83rem">· 📝 {{ p.notes[:70] }}{{ '…' if p.notes|length > 70 else '' }}</span>{% endif %}
-    </div>
-
-    <!-- Tags Row -->
-    <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-      {% if p.pipeline_stage %}
-      <span class="tag {{ 'tag-ok' if p.pipeline_stage=='completed' else 'tag-pen' }}" style="font-size:.78rem;padding:2px 10px">
-        {{ stages.get(p.pipeline_stage, p.pipeline_stage) }}
-      </span>
-      {% else %}
-      <span class="tag tag-new" style="font-size:.78rem">no pipeline</span>
-      {% endif %}
-
-      {% set bal = (p.total_amount | float) - (p.advance_amount | float) %}
-      {% if bal > 0 %}
-      <span class="tag tag-due" style="font-size:.78rem">₹{{ '%0.0f' | format(bal) }} due</span>
-      {% elif p.total_amount and (p.total_amount | float) > 0 %}
-      <span class="tag tag-ok" style="font-size:.78rem">✓ Paid</span>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Direct Actions -->
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto">
-    {% if p.phone %}
-    {% set wa = (p.phone or '') | replace('+','') | replace(' ','') | replace('-','') %}
-    {% if wa %}
-    {% set wa_text = "Hello " ~ (p.name or '') ~ ", contacting you from OrthoPro Artificial Limbs Center. How can we assist you today?" %}
-    <a class="btn btn-xs" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone={{ wa }}&text={{ wa_text|urlencode }}" style="background:#16a34a;border-color:#15803d;color:#fff;font-weight:600;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
-      💬 WhatsApp
-    </a>
-    {% endif %}
-    <a class="btn btn-xs btn-o" href="tel:{{ p.phone }}" style="padding:6px 12px;border-radius:6px">📞 Call</a>
-    {% endif %}
-
-    <a href="/admin/patients/{{ p.id }}" class="btn btn-xs btn-p" style="padding:6px 14px;border-radius:6px">
-      View Profile →
-    </a>
-  </div>
-</div>
-{% else %}
-<div class="card muted" style="text-align:center;padding:36px 20px">
-  <div style="font-size:2rem;margin-bottom:8px">📭</div>
-  <b>{{ 'No patient matches that search.' if q else 'No patients yet — add your first patient above.' }}</b>
-  <p style="margin:6px 0 12px;font-size:.88rem">Try changing the directory filters or register a new patient.</p>
-  {% if q or stage_f or due_f %}
-  <a class="btn btn-xs btn-o" href="/admin/patients">Clear Filters</a>
-  {% endif %}
-</div>
-{% endfor %}
-
 <script>
+function sortTable(col) {
+  var url = new URL(window.location.href);
+  var curCol = url.searchParams.get("sort") || "id";
+  var curOrder = url.searchParams.get("order") || "desc";
+  if (curCol === col) {
+    url.searchParams.set("order", curOrder === "asc" ? "desc" : "asc");
+  } else {
+    url.searchParams.set("sort", col);
+    url.searchParams.set("order", "asc");
+  }
+  window.location.href = url.toString();
+}
+
 function openAddPatientModal() {
   var modal = document.getElementById("add-patient-modal");
   if (modal) {
@@ -181,17 +432,44 @@ function openAddPatientModal() {
     if (first) setTimeout(function() { first.focus(); }, 60);
   }
 }
+
 function closeAddPatientModal() {
   var modal = document.getElementById("add-patient-modal");
   if (modal) modal.style.display = "none";
 }
+
+function openPatientFollowupModal(pid, name) {
+  var modal = document.getElementById("patient-followup-modal");
+  document.getElementById("pf-patient-id").value = pid;
+  document.getElementById("pf-title").textContent = "💬 Add Follow-up — " + (name || ("#" + pid));
+  if (modal) modal.style.display = "flex";
+}
+
+function closePatientFollowupModal() {
+  var modal = document.getElementById("patient-followup-modal");
+  if (modal) modal.style.display = "none";
+}
+
 document.addEventListener("keydown", function(e) {
-  if (e.key === "Escape") closeAddPatientModal();
+  if (e.key === "Escape") {
+    closeAddPatientModal();
+    closePatientFollowupModal();
+    var hist = document.getElementById("excel-history-modal");
+    if (hist) hist.style.display = "none";
+  }
 });
+
 document.addEventListener("click", function(e) {
-  var modal = document.getElementById("add-patient-modal");
-  if (modal && e.target === modal) closeAddPatientModal();
+  var addModal = document.getElementById("add-patient-modal");
+  if (addModal && e.target === addModal) closeAddPatientModal();
+
+  var pfModal = document.getElementById("patient-followup-modal");
+  if (pfModal && e.target === pfModal) closePatientFollowupModal();
+
+  var histModal = document.getElementById("excel-history-modal");
+  if (histModal && e.target === histModal) histModal.style.display = "none";
 });
+
 if (window.location.search.indexOf("add=1") !== -1 || window.location.search.indexOf("add=true") !== -1) {
   openAddPatientModal();
 }

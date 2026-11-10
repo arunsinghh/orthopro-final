@@ -17,7 +17,7 @@ from app import db as dblib                  # noqa: E402
 from app.security import hash_password       # noqa: E402
 
 TEST_DB = os.environ.get(
-    "DATABASE_URL", "postgresql://orthopro_app:test@127.0.0.1:5432/orthopro_test")
+    "DATABASE_URL", "postgresql://orthopro_app:orthopro_app@127.0.0.1:5432/orthopro_test")
 ADMIN_USER = "admin"
 ADMIN_PW = "Str0ng!Passw0rd#2026"
 
