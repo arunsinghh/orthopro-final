@@ -96,45 +96,6 @@
       <a href="/admin/patients?limit={{ limit_arg }}" class="btn btn-xs btn-o" style="padding:7px 10px">Clear</a>
       {% endif %}
     </form>
-
-    <!-- Filters and Display Options -->
-    <div class="excel-toolbar-group">
-      <!-- Stage Filter -->
-      <form method="get" action="/admin/patients" style="display:inline-flex;margin:0">
-        <input type="hidden" name="q" value="{{ q }}">
-        {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
-        {% if status_f %}<input type="hidden" name="status" value="{{ status_f }}">{% endif %}
-        <input type="hidden" name="limit" value="{{ limit_arg }}">
-        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
-        <select name="stage" class="excel-select-sm" onchange="this.form.submit()" title="Filter by Pipeline Stage">
-          <option value="">All Stages ({{ stages|length }})</option>
-          {% for k, sname in stages.items() %}
-          <option value="{{ k }}" {{ 'selected' if stage_f == k }}>{{ sname }}</option>
-          {% endfor %}
-        </select>
-      </form>
-
-      <!-- Rows Per Page -->
-      <form method="get" action="/admin/patients" style="display:inline-flex;align-items:center;gap:4px;margin:0">
-        <input type="hidden" name="q" value="{{ q }}">
-        {% if stage_f %}<input type="hidden" name="stage" value="{{ stage_f }}">{% endif %}
-        {% if due_f %}<input type="hidden" name="due" value="{{ due_f }}">{% endif %}
-        {% if status_f %}<input type="hidden" name="status" value="{{ status_f }}">{% endif %}
-        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-        {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
-        <span class="muted" style="font-size:0.8rem">Rows:</span>
-        <select name="limit" class="excel-select-sm" onchange="this.form.submit()" title="Rows per page">
-          <option value="10" {{ 'selected' if limit_arg == '10' }}>10</option>
-          <option value="25" {{ 'selected' if limit_arg == '25' }}>25</option>
-          <option value="50" {{ 'selected' if limit_arg == '50' or not limit_arg }}>50</option>
-          <option value="100" {{ 'selected' if limit_arg == '100' }}>100</option>
-          <option value="200" {{ 'selected' if limit_arg == '200' }}>200</option>
-          <option value="all" {{ 'selected' if limit_arg == 'all' }}>All</option>
-        </select>
-      </form>
-
-    </div>
   </div>
 
   <!-- Excel Spreadsheet Table Wrap -->
